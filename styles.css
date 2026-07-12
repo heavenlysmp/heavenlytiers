@@ -181,9 +181,9 @@ tr.r1{border-left:3px solid #FFD700;background:linear-gradient(90deg,rgba(255,21
 tr.r2{border-left:3px solid #C0C0C0;background:linear-gradient(90deg,rgba(192,192,192,.04) 0%,transparent 40%)}
 tr.r3{border-left:3px solid #CD7F32;background:linear-gradient(90deg,rgba(205,127,50,.04) 0%,transparent 40%)}
 .sk-c{width:52px;min-width:52px;vertical-align:middle}
-.sk-body{width:96px;height:96px;object-fit:contain;image-rendering:auto;display:block}
+.sk-body{width:78px;height:78px;object-fit:contain;image-rendering:auto;display:block}
 .sk-sh{width:40px;height:80px;border-radius:4px}
-.sk-canvas{image-rendering:pixelated;display:block;width:40px!important;height:80px!important;border-radius:4px;vertical-align:middle}
+.sk-canvas{image-rendering:pixelated;display:block;width:78px!important;height:78px!important;object-fit:contain;border-radius:8px;background:var(--el);vertical-align:middle}
 /* Skin type selector in panel */
 .st-tabs{display:flex;gap:4px;margin-bottom:12px}
 .st-tab{flex:1;padding:8px 4px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;border:1.5px solid var(--bd);background:var(--el);color:var(--fg2);transition:all .15s}
@@ -204,8 +204,8 @@ tr.r3{border-left:3px solid #CD7F32;background:linear-gradient(90deg,rgba(205,12
 .hi{background:var(--gld);color:#000;padding:0 2px;border-radius:2px;font-weight:700}
 .tiers-r{display:flex;gap:3px;flex-wrap:wrap;align-items:center}
 .tbc{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:default}
-.tbc .tc{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bd);overflow:hidden;transition:transform .15s}
-.tbc .tc img{width:16px;height:16px;object-fit:contain;image-rendering:pixelated}
+.tbc .tc{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bd);overflow:hidden;transition:transform .15s}
+.tbc .tc img{width:22px;height:22px;object-fit:contain;image-rendering:pixelated}
 .tbc .tl{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--fg3);white-space:nowrap}
 .tbc:hover .tc{transform:scale(1.15)}
 .tbc .tp{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%) translateY(-2px);background:var(--el);border:1px solid var(--bd);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;white-space:nowrap;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.4);pointer-events:none;color:var(--fg);opacity:0;transition:opacity .12s ease,transform .12s ease}
