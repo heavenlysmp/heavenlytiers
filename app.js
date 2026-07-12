@@ -399,13 +399,13 @@ function skinType(p){
 function getBodyRenderUrl(p){
   const st=skinType(p);
   if(st==='java'){
-    return 'https://render.crafty.gg/3d/full/'+encodeURIComponent(p.uuid||p.username);
+    return 'https://render.crafty.gg/3d/bust/'+encodeURIComponent(p.uuid||p.username);
   }
   if(st==='bedrock'){
-    if(p.renderUrl)return p.renderUrl; // cached
-    return null; // rendered via canvas after XUID lookup
+    if(p.renderUrl)return p.renderUrl; // cached 3D bust URL (resolved via textureHash below)
+    return null; // not resolved yet — table cell falls back to placeholder, async resolves + re-renders
   }
-  if(st==='raw')return null; // rendered via canvas
+  if(st==='raw')return null; // no known-identity — canvas fallback only
   return null;
 }
 
@@ -574,7 +574,22 @@ async function processBedrockCanvases(){
       if(r.ok){
         const d=await r.json();
         if(d.texture_id&&document.contains(c)){
-          renderRawCanvas(c,'https://textures.minecraft.net/texture/'+d.texture_id,3);
+          // Build a 3D bust render from the Mojang-CDN texture hash GeyserMC gave us —
+          // VZGE (visage.surgeplay.com) accepts raw texture IDs directly, no Mojang account needed.
+          const bustUrl='https://visage.surgeplay.com/bust/160/'+d.texture_id;
+          const un=c.dataset.username;
+          const p=un?window.players.find(x=>x.username===un):null;
+          if(p){p.renderUrl=bustUrl;savePlayers();}
+          const img=document.createElement('img');
+          img.className='sk-body';
+          img.src=bustUrl;
+          img.alt=un||'';
+          img.onerror=function(){
+            // VZGE failed — fall back to the flat 2D texture render
+            renderRawCanvas(c,'https://textures.minecraft.net/texture/'+d.texture_id,3);
+            c.style.display='';
+          };
+          c.replaceWith(img);
         }
       }
     }catch(e){}
