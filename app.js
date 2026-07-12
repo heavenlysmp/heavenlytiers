@@ -511,7 +511,7 @@ function processTableSkinCanvases(){
   document.querySelectorAll('canvas[data-skin-url]').forEach(c=>{
     if(c.dataset.rendered)return;
     c.dataset.rendered='1';
-    renderRawCanvas(c,c.dataset.skinUrl,3);
+    renderRawCanvas(c,c.dataset.skinUrl,5);
   });
 }
 
@@ -574,7 +574,7 @@ async function processBedrockCanvases(){
       if(r.ok){
         const d=await r.json();
         if(d.texture_id&&document.contains(c)){
-          renderRawCanvas(c,'https://textures.minecraft.net/texture/'+d.texture_id,3);
+          renderRawCanvas(c,'https://textures.minecraft.net/texture/'+d.texture_id,5);
         }
       }
     }catch(e){}
