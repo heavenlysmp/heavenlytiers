@@ -45,7 +45,7 @@ html.light .crd::before{background:none;border-top:none}
 html.light .hdr{background:rgba(240,240,240,.9);border-bottom:1px solid var(--bd)}
 .hdr-in{max-width:var(--mw);margin:0 auto;display:flex;align-items:center;padding:0 20px;height:var(--hdr-h);gap:12px}
 .logo{display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0}
-.logo img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(255,215,0,.25))}
+.logo img{width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(255,215,0,.25))}
 .logo span{font-weight:800;font-size:18px;color:var(--gld);letter-spacing:-.3px}
 .nvd{display:flex;align-items:center;gap:2px;flex:1;justify-content:center}
 .nvd span{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:500;font-size:13px;color:var(--fg2);transition:all .15s;white-space:nowrap;position:relative}
@@ -152,7 +152,7 @@ html.light .rk-bar{background:var(--sf);border-color:var(--bd)}
 html.light .tabs-s{background:rgba(0,0,0,.02)}
 .tabs{display:flex;gap:0;min-width:max-content;position:relative}
 .tab{display:flex;align-items:center;gap:5px;padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,background .2s;white-space:nowrap;font-weight:600;font-size:13px;color:var(--fg2)}
-.tab img{width:28px;height:28px;object-fit:contain;image-rendering:pixelated}
+.tab img{width:40px;height:40px;object-fit:contain;image-rendering:auto}
 .tab:hover{color:var(--fg);background:rgba(255,255,255,.03)}
 .tab.act{color:var(--gld);border-bottom-color:transparent}
 /* Sliding gold indicator */
@@ -496,7 +496,7 @@ html.light .tst{background:rgba(255,255,255,.95);border:1px solid var(--bd);box-
   .btt{bottom:76px;right:16px}
   .tw-c{bottom:76px;right:12px}
   .tab{padding:8px 10px;font-size:11px}
-  .tab img{width:22px;height:22px}
+  .tab img{width:32px;height:32px}
   .mdl{position:fixed;bottom:0;left:0;right:0;top:auto;max-width:100%;width:100%;border-radius:16px 16px 0 0;max-height:90vh;animation:mdlUp .3s ease}
   .mhandle{display:block;width:40px;height:4px;background:var(--bd);border-radius:2px;margin:0 auto 16px}
   @keyframes mdlUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
