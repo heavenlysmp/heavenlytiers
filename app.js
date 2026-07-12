@@ -399,7 +399,7 @@ function skinType(p){
 function getBodyRenderUrl(p){
   const st=skinType(p);
   if(st==='java'){
-    return 'https://render.crafty.gg/2d/front/'+encodeURIComponent(p.uuid||p.username);
+    return 'https://render.crafty.gg/3d/bust/'+encodeURIComponent(p.uuid||p.username);
   }
   if(st==='bedrock'){
     if(p.renderUrl)return p.renderUrl; // cached
