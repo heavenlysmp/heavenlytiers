@@ -399,7 +399,7 @@ function skinType(p){
 function getBodyRenderUrl(p){
   const st=skinType(p);
   if(st==='java'){
-    return 'https://render.crafty.gg/3d/bust/'+encodeURIComponent(p.uuid||p.username)+'?width=200&height=200';
+    return 'https://render.crafty.gg/3d/full/'+encodeURIComponent(p.uuid||p.username);
   }
   if(st==='bedrock'){
     if(p.renderUrl)return p.renderUrl; // cached
@@ -413,7 +413,7 @@ function getBodyRenderUrl(p){
 async function fetchSkinTexture(p){
   const st=skinType(p);
   if(st==='java'){
-    return 'https://api.crafty.gg/api/v2/skins/'+encodeURIComponent(p.uuid||p.username)+'/raw';
+    return 'https://mc-heads.net/skin/'+encodeURIComponent(p.uuid||p.username);
   }
   if(st==='bedrock'&&p.xuid){
     try{
@@ -511,7 +511,7 @@ function processTableSkinCanvases(){
   document.querySelectorAll('canvas[data-skin-url]').forEach(c=>{
     if(c.dataset.rendered)return;
     c.dataset.rendered='1';
-    renderRawCanvas(c,c.dataset.skinUrl,5);
+    renderRawCanvas(c,c.dataset.skinUrl,3);
   });
 }
 
@@ -574,7 +574,7 @@ async function processBedrockCanvases(){
       if(r.ok){
         const d=await r.json();
         if(d.texture_id&&document.contains(c)){
-          renderRawCanvas(c,'https://textures.minecraft.net/texture/'+d.texture_id,5);
+          renderRawCanvas(c,'https://textures.minecraft.net/texture/'+d.texture_id,3);
         }
       }
     }catch(e){}
@@ -630,7 +630,7 @@ function buildTabs(){
       const img=document.createElement('img');
       img.src=ic.u;
       img.alt=m;
-      img.style.cssText='width:28px;height:28px;object-fit:contain;image-rendering:pixelated;flex-shrink:0';
+      img.style.cssText='width:40px;height:40px;object-fit:contain;image-rendering:auto;flex-shrink:0';
       img.onerror=function(){
         const fb=document.createElement('span');
         fb.innerHTML=MODE_FB;
