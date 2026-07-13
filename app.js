@@ -179,7 +179,21 @@ function sU(u){
   try{localStorage.setItem('hu',JSON.stringify(u))}catch(e){}
   lss('hu',u); // also writes to Firestore via setCloudValue
 }
-function gC(){try{return JSON.parse(localStorage.getItem('hcu'))||null}catch(e){return null}}
+function gC(){
+  try{
+    const cached=JSON.parse(localStorage.getItem('hcu'));
+    if(!cached)return null;
+    // Role can change server-side (promote/demote) after this session snapshot was cached —
+    // always resolve the live role from the authoritative user list so badges/permissions
+    // never show a stale role like "Member" after being promoted to Admin.
+    const live=gU().find(x=>x.email===cached.email);
+    if(live&&live.role!==cached.role){
+      cached.role=live.role;
+      sC(cached); // keep the cache in sync so subsequent reads are cheap and consistent
+    }
+    return cached;
+  }catch(e){return null}
+}
 function sC(u){localStorage.setItem('hcu',JSON.stringify(u))}
 
 // Seed owner
@@ -303,7 +317,7 @@ function upAuth(){
   if(c){
     const icons={Owner:S.crown,Admin:S.shield,Member:S.sword};
     const colors={Owner:'#FFD700',Admin:'#60a5fa',Member:'#9ca3af'};
-    a.innerHTML=`<div class="bb" style="background:${colors[c.role]};color:#000">${icons[c.role]} ${c.role}<div class="dd"><button onclick="doOut()">${S.logout} Logout</button></div></div>`;
+    a.innerHTML=`<div class="bb" style="background:${colors[c.role]};color:#000">${icons[c.role]} ${c.role}<div class="dd"><button onclick="doOut()">${S.logout} Logout</button><button onclick="openDangerZone()" style="color:#ff3860">⚠ Delete Account</button></div></div>`;
   }else{
     a.innerHTML=`<button class="btn-g" onclick="openM('authM')" style="font-size:12px;padding:6px 14px">Login</button>`;
   }
@@ -335,6 +349,38 @@ function doOut(){
   upAuth();
   showPage('home');
   toast('Logged out','info');
+}
+
+function openDangerZone(){
+  const c=gC();if(!c)return;
+  closeMs();
+  document.getElementById('delAcctUn').textContent=c.username||c.email;
+  const inp=document.getElementById('delAcctInput');
+  inp.value='';
+  checkDelAcctInput();
+  openM('delAcctM');
+}
+function checkDelAcctInput(){
+  const c=gC();if(!c)return;
+  const btn=document.getElementById('delAcctBtn');
+  const match=document.getElementById('delAcctInput').value===(c.username||c.email);
+  btn.disabled=!match;
+  btn.style.opacity=match?'1':'.5';
+  btn.style.cursor=match?'pointer':'not-allowed';
+}
+function doDeleteAccount(){
+  const c=gC();if(!c)return;
+  if(document.getElementById('delAcctInput').value!==(c.username||c.email))return;
+  if(c.role==='Owner')return toast('The Owner account cannot be self-deleted — transfer ownership first','error');
+  let us=gU();
+  us=us.filter(x=>x.email!==c.email);
+  sU(us);
+  logA(`${c.username||c.email} deleted their own account`);
+  localStorage.removeItem('hcu');
+  closeMs();
+  upAuth();
+  showPage('home');
+  toast('Account deleted','success');
 }
 
 // ===== SEARCH (150ms debounce) =====
@@ -549,7 +595,7 @@ function tableSkinCell(p,idx){
   }
   if(st==='bedrock'){
     if(p.xuid){
-      return '<canvas class="sk-canvas" width="40" height="80" data-xuid="'+esc(p.xuid)+'" data-rendered=""></canvas>';
+      return '<canvas class="sk-canvas" width="40" height="80" data-xuid="'+esc(p.xuid)+'" data-username="'+esc(p.username)+'" data-rendered=""></canvas>';
     }
     // No XUID yet — kick off async lookup, show skeleton meanwhile
     if(p.bedrockGt&&!p.xuid){
