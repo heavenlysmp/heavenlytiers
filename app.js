@@ -271,7 +271,6 @@ let curPg='home';
 const NAV_ITEMS=[
   {id:'home',label:'Home',svg:S.home},
   {id:'rankings',label:'Rankings',svg:S.trophy},
-  {id:'testers',label:'Testers',svg:S.flask},
   {id:'api',label:'API',svg:S.code},
   {id:'panel',label:'Panel',svg:S.crown,auth:true}
 ];
@@ -284,10 +283,7 @@ function showPage(n){
   closeHam();
   if(n==='home')animStats();
   if(n==='rankings')renderRank();
-  if(n==='testers')fetchTesters();
   if(n==='panel')initPanel();
-  // Close SSE stream when leaving testers page
-  if(n!=='testers'&&sseSource){sseSource.close();sseSource=null;}
   window.scrollTo({top:0});
 }
 
@@ -323,13 +319,57 @@ function upAuth(){
   }
 }
 
+let _pendingOwnerLogin=null;
 function doLogin(){
   const e=document.getElementById('lE').value.trim().toLowerCase();
   const p=document.getElementById('lP').value;
   if(!e||!p)return toast('Fill in all fields','error');
   const us=gU(),u=us.find(x=>x.email===e&&x.password===btoa(p));
   if(!u)return toast('Invalid credentials','error');
+  if(u.role==='Owner'){
+    _pendingOwnerLogin=u;
+    closeMs();
+    openOwnerPinStep();
+    return;
+  }
   sC(u);closeMs();upAuth();toast('Logged in as '+u.role,'success');
+}
+function openOwnerPinStep(){
+  const u=_pendingOwnerLogin;if(!u)return;
+  document.getElementById('opPinInput').value='';
+  document.getElementById('opPinConfirm').value='';
+  if(u.pin){
+    document.getElementById('opPinTitle').textContent='Enter Owner PIN';
+    document.getElementById('opPinDesc').textContent='Two-step verification is enabled for the Owner account.';
+    document.getElementById('opPinConfirmWrap').style.display='none';
+  }else{
+    document.getElementById('opPinTitle').textContent='Set Owner PIN';
+    document.getElementById('opPinDesc').textContent='First-time setup — choose a 4-digit PIN to protect the Owner account. You will need it on every future login.';
+    document.getElementById('opPinConfirmWrap').style.display='block';
+  }
+  openM('ownerPinM');
+}
+function submitOwnerPin(){
+  const u=_pendingOwnerLogin;if(!u)return;
+  const val=document.getElementById('opPinInput').value.trim();
+  if(!/^\d{4}$/.test(val))return toast('PIN must be exactly 4 digits','error');
+  if(u.pin){
+    if(val!==u.pin)return toast('Incorrect PIN','error');
+    closeMs();sC(u);upAuth();toast('Logged in as Owner','success');
+    _pendingOwnerLogin=null;
+  }else{
+    const conf=document.getElementById('opPinConfirm').value.trim();
+    if(val!==conf)return toast('PINs do not match','error');
+    let us=gU();
+    const idx=us.findIndex(x=>x.email===u.email);
+    if(idx>-1){us[idx].pin=val;sU(us);u.pin=val;}
+    closeMs();sC(u);upAuth();toast('Owner PIN set. Logged in as Owner','success');
+    _pendingOwnerLogin=null;
+  }
+}
+function cancelOwnerPin(){
+  _pendingOwnerLogin=null;
+  closeMs();
 }
 function doSign(){
   const n=document.getElementById('sN').value.trim();
@@ -1009,7 +1049,12 @@ function buildSettings(){
     <div class="pf"><label>New Email <span style="color:var(--fg3);font-size:11px">(leave blank to keep current)</span></label><input type="email" id="sNE" placeholder="${esc(curEmail)}"/></div>
     <div class="pf"><label>New Password <span style="color:var(--fg3);font-size:11px">(leave blank to keep current)</span></label><input type="password" id="sNP" placeholder="New password"/></div>
     <div class="pf"><label>Confirm New Password</label><input type="password" id="sNP2" placeholder="Repeat new password"/></div>
-    <button class="btn-g" onclick="saveCredentials()" style="margin-top:6px;display:flex;align-items:center;gap:6px">${S.save} Update Credentials</button>`;
+    <button class="btn-g" onclick="saveCredentials()" style="margin-top:6px;display:flex;align-items:center;gap:6px">${S.save} Update Credentials</button>
+    <hr style="border-color:var(--bd);margin:22px 0"/>
+    <h3 style="font-weight:700;font-size:15px;margin-bottom:4px;color:#ff3860">⚠ Transfer Ownership</h3>
+    <p style="font-size:12px;color:var(--fg3);margin-bottom:12px">Hands full Owner control to another account. You will be demoted to Admin. This cannot be undone by yourself — the new Owner must transfer it back.</p>
+    <div class="pf"><label>New Owner</label><select id="toTarget">${gU().filter(u=>u.role!=='Owner').map(u=>`<option value="${esc(u.email)}">${esc(u.username)} (${esc(u.role)})</option>`).join('')||'<option disabled>No eligible accounts</option>'}</select></div>
+    <button class="btn-g" style="background:#ff3860" onclick="confirmTransferOwnership()">Transfer Ownership</button>`;
 }
 
 function buildAddEdit(){
@@ -1231,6 +1276,36 @@ function cfmRm(un){
     if(curPg==='rankings')renderRank();
   };
   openM('cfmM');
+}
+
+function confirmTransferOwnership(){
+  const sel=document.getElementById('toTarget');
+  if(!sel||!sel.value)return toast('No account selected','error');
+  const email=sel.value;
+  const us=gU();
+  const target=us.find(x=>x.email===email);
+  if(!target)return toast('Account not found','error');
+  document.getElementById('cfmH').innerHTML=S.warn+' Confirm Ownership Transfer';
+  document.getElementById('cfmMsg').textContent=`Transfer Owner to "${target.username}"? You will be demoted to Admin immediately. This cannot be undone by yourself.`;
+  const y=document.getElementById('cfmY');
+  y.textContent='Yes, Transfer';
+  y.onclick=()=>doTransferOwnership(email);
+  openM('cfmM');
+}
+function doTransferOwnership(email){
+  const c=gC();if(!c||c.role!=='Owner')return;
+  let us=gU();
+  const meIdx=us.findIndex(x=>x.email===c.email);
+  const targetIdx=us.findIndex(x=>x.email===email);
+  if(meIdx<0||targetIdx<0)return toast('Account not found','error');
+  us[meIdx].role='Admin';
+  us[targetIdx].role='Owner';
+  sU(us);
+  logA(`${c.username||c.email} transferred Owner to ${us[targetIdx].username||email}`);
+  closeMs();
+  upAuth(); // gC() self-heals to the new "Admin" role on next read
+  showPage('home');
+  toast('Ownership transferred. You are now Admin.','success');
 }
 
 // ===== TESTER MANAGEMENT =====
