@@ -51,9 +51,9 @@ const TI={
   Specialist:'<svg width="14" height="14" viewBox="0 0 24 24" fill="#34d399"><path d="M12 2L2 12l10 10 10-10z"/></svg>',
   'Combat Ace':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M15 21l6-6"/></svg>',
   'Combat Master':'<svg width="14" height="14" viewBox="0 0 24 24" fill="#c084fc"><path d="M12 2L2 12l10 10 10-10z"/><circle cx="12" cy="12" r="3" fill="#fff"/></svg>',
-  'Combat Grandmaster':'<svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700"><path d="M2 4l3 12h14l3-12-5 4-5-4-5 4z"/><path d="M5 16h14v3H5z"/></svg>'
-   'Angelic Master':'<svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700"><path d="M2 4l3 12h14l3-12-5 4-5-4-5 4z"/><path d="M5 16h14v3H5z"/></svg>'
-   'Heavenly Desceneded':'<svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700"><path d="M2 4l3 12h14l3-12-5 4-5-4-5 4z"/><path d="M5 16h14v3H5z"/></svg>'
+  'Combat Grandmaster':'<svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700"><path d="M2 4l3 12h14l3-12-5 4-5-4-5 4z"/><path d="M5 16h14v3H5z"/></svg>',
+  'Angelic Master':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e0e7ff" stroke-width="1.5"><path d="M12 2v6M12 16v6M4 8c2 2 4 2.5 8 2.5S18 10 20 8M4 16c2-2 4-2.5 8-2.5S18 14 20 16" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="#e0e7ff" stroke="none"/></svg>',
+  'Heavenly Descendent':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFD700" stroke-width="1.5"><path d="M12 2l2.5 6L21 9l-5 4 1.5 7L12 17l-5.5 3L8 13 3 9l6.5-1z" fill="#FFD700" stroke="#FFD700"/></svg>'
 };
 
 // Title pill helper — coloured badge with icon
@@ -140,9 +140,9 @@ function getPoints(p){let s=0;for(const m of MODES){const t=p.tiers[m];if(t&&TIE
 function getMissLT2(p){const ms=[];for(const m of MODES){const t=p.tiers[m];if(!t||!LT2_OK.includes(t))ms.push(m)}return ms}
 
 function getTitle(p){
-  const pts=getPoints(p) 
-  if(pts>=750)return{icon:'Heavenly Desceneded',name:'Heavenly Desceneded',pts};
-  if(pts>=650)return{icon:'Angelic Master',name:'Angelic Master',pts};
+  const pts=getPoints(p);
+  if(pts>=700)return{icon:'Heavenly Descendent',name:'Heavenly Descendent',pts};
+  if(pts>=550)return{icon:'Angelic Master',name:'Angelic Master',pts};
   if(pts>=400)return{icon:'Combat Grandmaster',name:'Combat Grandmaster',pts};
   if(pts>=250){const ms=getMissLT2(p);if(!ms.length)return{icon:'Combat Master',name:'Combat Master',pts,miss:[]};return{icon:'Combat Ace',name:'Combat Ace',pts,miss:ms}}
   if(pts>=100)return{icon:'Combat Ace',name:'Combat Ace',pts};
@@ -154,7 +154,7 @@ function getTitle(p){
 }
 
 // Progress to next title
-const TITLE_THRESHOLDS=[{n:'Unranked',min:0},{n:'Rookie',min:1},{n:'Novice',min:10},{n:'Cadet',min:20},{n:'Specialist',min:50},{n:'Combat Ace',min:100},{n:'Combat Master',min:250},{n:'Combat Grandmaster',min:400}{n:'Angelic Master',min:650}{n:'Heavenly Desceneded',min:750}
+const TITLE_THRESHOLDS=[{n:'Unranked',min:0},{n:'Rookie',min:1},{n:'Novice',min:10},{n:'Cadet',min:20},{n:'Specialist',min:50},{n:'Combat Ace',min:100},{n:'Combat Master',min:250},{n:'Combat Grandmaster',min:400},{n:'Angelic Master',min:550},{n:'Heavenly Descendent',min:700}];
 function getProgress(pts){
   for(let i=TITLE_THRESHOLDS.length-1;i>=0;i--){
     if(pts>=TITLE_THRESHOLDS[i].min){
@@ -1623,7 +1623,9 @@ function buildUI(){
     <tr><td>${TI.Specialist} Specialist</td><td>50–99</td></tr>
     <tr><td>${TI['Combat Ace']} Combat Ace</td><td>100–249</td></tr>
     <tr><td>${TI['Combat Master']} Combat Master</td><td>250–399</td></tr>
-    <tr><td>${TI['Combat Grandmaster']} Combat Grandmaster</td><td>400+</td></tr>
+    <tr><td>${TI['Combat Grandmaster']} Combat Grandmaster</td><td>400–549</td></tr>
+    <tr><td>${TI['Angelic Master']} Angelic Master</td><td>550–699</td></tr>
+    <tr><td>${TI['Heavenly Descendent']} Heavenly Descendent</td><td>700+</td></tr>
     </table>
     <h3 style="font-weight:700;font-size:14px;margin:16px 0 6px">Overall Tab</h3>
     <p style="font-size:13px;color:var(--fg2);margin-bottom:12px">The Overall tab shows each player's total points summed across all ${MODES.length} game modes. It is not a game mode itself — it is auto-calculated.</p>
