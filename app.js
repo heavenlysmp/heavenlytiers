@@ -52,6 +52,8 @@ const TI={
   'Combat Ace':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M15 21l6-6"/></svg>',
   'Combat Master':'<svg width="14" height="14" viewBox="0 0 24 24" fill="#c084fc"><path d="M12 2L2 12l10 10 10-10z"/><circle cx="12" cy="12" r="3" fill="#fff"/></svg>',
   'Combat Grandmaster':'<svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700"><path d="M2 4l3 12h14l3-12-5 4-5-4-5 4z"/><path d="M5 16h14v3H5z"/></svg>'
+   'Angelic Master':'<svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700"><path d="M2 4l3 12h14l3-12-5 4-5-4-5 4z"/><path d="M5 16h14v3H5z"/></svg>'
+   'Heavenly Desceneded':'<svg width="14" height="14" viewBox="0 0 24 24" fill="#FFD700"><path d="M2 4l3 12h14l3-12-5 4-5-4-5 4z"/><path d="M5 16h14v3H5z"/></svg>'
 };
 
 // Title pill helper — coloured badge with icon
@@ -138,7 +140,9 @@ function getPoints(p){let s=0;for(const m of MODES){const t=p.tiers[m];if(t&&TIE
 function getMissLT2(p){const ms=[];for(const m of MODES){const t=p.tiers[m];if(!t||!LT2_OK.includes(t))ms.push(m)}return ms}
 
 function getTitle(p){
-  const pts=getPoints(p);
+  const pts=getPoints(p) 
+  if(pts>=750)return{icon:'Heavenly Desceneded',name:'Heavenly Desceneded',pts};
+  if(pts>=650)return{icon:'Angelic Master',name:'Angelic Master',pts};
   if(pts>=400)return{icon:'Combat Grandmaster',name:'Combat Grandmaster',pts};
   if(pts>=250){const ms=getMissLT2(p);if(!ms.length)return{icon:'Combat Master',name:'Combat Master',pts,miss:[]};return{icon:'Combat Ace',name:'Combat Ace',pts,miss:ms}}
   if(pts>=100)return{icon:'Combat Ace',name:'Combat Ace',pts};
@@ -150,7 +154,7 @@ function getTitle(p){
 }
 
 // Progress to next title
-const TITLE_THRESHOLDS=[{n:'Unranked',min:0},{n:'Rookie',min:1},{n:'Novice',min:10},{n:'Cadet',min:20},{n:'Specialist',min:50},{n:'Combat Ace',min:100},{n:'Combat Master',min:250},{n:'Combat Grandmaster',min:400}];
+const TITLE_THRESHOLDS=[{n:'Unranked',min:0},{n:'Rookie',min:1},{n:'Novice',min:10},{n:'Cadet',min:20},{n:'Specialist',min:50},{n:'Combat Ace',min:100},{n:'Combat Master',min:250},{n:'Combat Grandmaster',min:400}{n:'Angelic Master',min:650}{n:'Heavenly Desceneded',min:750}
 function getProgress(pts){
   for(let i=TITLE_THRESHOLDS.length-1;i>=0;i--){
     if(pts>=TITLE_THRESHOLDS[i].min){
