@@ -279,10 +279,10 @@ tr.r3{border-left:3px solid #CD7F32;background-image:linear-gradient(90deg,rgba(
 @keyframes cardEntrance{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes borderGlow{0%,100%{border-color:rgba(255,215,0,.2)}50%{border-color:rgba(255,215,0,.6)}}
 /* Combat Grandmaster row glow */
-tr.rw:has(.tp-Combat-Grandmaster){background:linear-gradient(90deg,rgba(255,215,0,.05) 0%,transparent 60%)}
-tr.rw:has(.tp-Angelic-Master){background:linear-gradient(90deg,rgba(224,231,255,.06) 0%,transparent 60%)}
-tr.rw:has(.tp-Heavenly-Descendent){background:linear-gradient(90deg,rgba(255,215,0,.09) 0%,transparent 60%)}
-tr.rw:has(.tp-Combat-Master){background:linear-gradient(90deg,rgba(168,85,247,.05) 0%,transparent 60%)}
+tr.rw:has(.tp-Combat-Grandmaster){background-image:linear-gradient(90deg,rgba(255,215,0,.05) 0%,transparent 60%)}
+tr.rw:has(.tp-Angelic-Master){background-image:linear-gradient(90deg,rgba(224,231,255,.06) 0%,transparent 60%)}
+tr.rw:has(.tp-Heavenly-Descendent){background-image:linear-gradient(90deg,rgba(255,215,0,.09) 0%,transparent 60%)}
+tr.rw:has(.tp-Combat-Master){background-image:linear-gradient(90deg,rgba(168,85,247,.05) 0%,transparent 60%)}
 /* Page entrance override */
 .page.vis{animation:cardEntrance .25s cubic-bezier(.4,0,.2,1)}
 
