@@ -416,6 +416,8 @@ html.light .pf input,html.light .pf select{background:#f0f0f0;border-color:#ddd}
 .ri .del svg{width:16px;height:16px}
 .ll{max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
 .li{font-size:12px;padding:8px 12px;background:var(--el);border-radius:6px;border:1px solid var(--bd);display:flex;align-items:flex-start;gap:8px}
+.log-redo{margin-left:auto;flex-shrink:0;background:none;border:1px solid var(--bd2);color:var(--fg2);font-size:11px;padding:3px 8px;border-radius:5px;cursor:pointer;white-space:nowrap;transition:.15s}
+.log-redo:hover{border-color:var(--gld);color:var(--gld)}
 .li svg{width:14px;height:14px;color:var(--fg3);flex-shrink:0;margin-top:1px}
 .li .ts{color:var(--fg3);font-family:'Courier New',monospace;font-size:11px;white-space:nowrap}
 /* Tester mgmt */
