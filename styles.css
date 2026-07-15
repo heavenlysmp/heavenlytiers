@@ -175,24 +175,24 @@ td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03);vertical-alig
 html.light td{border-bottom-color:var(--bd2)}
 tr.rw{
   cursor:pointer;
-  background-image:linear-gradient(90deg,rgba(160,174,192,.16) 0%,rgba(160,174,192,.04) 60%,transparent 100%);
+  background-image:linear-gradient(90deg,rgba(160,174,192,.22) 0%,rgba(160,174,192,.05) 70%,transparent 100%);
   background-repeat:no-repeat;
-  background-size:0% 100%;
-  background-position:left;
-  transition:background-size .4s cubic-bezier(.4,0,.2,1);
+  background-size:70% 100%;
+  background-position:130% 0;
+  transition:background-position .45s cubic-bezier(.4,0,.2,1);
 }
-tr.rw.r1{background-image:linear-gradient(90deg,rgba(255,215,0,.22) 0%,rgba(255,215,0,.05) 60%,transparent 100%)}
-tr.rw.r2{background-image:linear-gradient(90deg,rgba(192,192,192,.2) 0%,rgba(192,192,192,.05) 60%,transparent 100%)}
-tr.rw.r3{background-image:linear-gradient(90deg,rgba(205,127,50,.2) 0%,rgba(205,127,50,.05) 60%,transparent 100%)}
-tr.rw:hover{background-size:100% 100%}
+tr.rw.r1{background-image:linear-gradient(90deg,rgba(255,215,0,.28) 0%,rgba(255,215,0,.06) 70%,transparent 100%)}
+tr.rw.r2{background-image:linear-gradient(90deg,rgba(192,192,192,.24) 0%,rgba(192,192,192,.05) 70%,transparent 100%)}
+tr.rw.r3{background-image:linear-gradient(90deg,rgba(205,127,50,.24) 0%,rgba(205,127,50,.05) 70%,transparent 100%)}
+tr.rw:hover{background-position:0% 0}
 tr.rw:hover td:first-child{box-shadow:inset 3px 0 0 var(--gld)}
 tr.rw.r1:hover td:first-child{box-shadow:inset 3px 0 0 #FFD700}
 tr.rw.r2:hover td:first-child{box-shadow:inset 3px 0 0 #C0C0C0}
 tr.rw.r3:hover td:first-child{box-shadow:inset 3px 0 0 #CD7F32}
 @keyframes rowIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-tr.r1{border-left:3px solid #FFD700;background-image:linear-gradient(90deg,rgba(255,215,0,.06) 0%,transparent 40%)}
-tr.r2{border-left:3px solid #C0C0C0;background-image:linear-gradient(90deg,rgba(192,192,192,.04) 0%,transparent 40%)}
-tr.r3{border-left:3px solid #CD7F32;background-image:linear-gradient(90deg,rgba(205,127,50,.04) 0%,transparent 40%)}
+tr.r1{border-left:3px solid #FFD700}
+tr.r2{border-left:3px solid #C0C0C0}
+tr.r3{border-left:3px solid #CD7F32}
 .sk-c{width:52px;min-width:52px;vertical-align:middle}
 .sk-body{width:78px;height:78px;object-fit:contain;image-rendering:auto;display:block}
 .sk-sh{width:40px;height:80px;border-radius:4px}
