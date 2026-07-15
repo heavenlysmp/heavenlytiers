@@ -1,7 +1,12 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#080808;--sf:#111111;--el:#181818;--bd:#222222;--bd2:#1a1a1a;
-  --fg:#fafafa;--fg2:#a0a0a0;--fg3:#606060;
+  --fg:#fafafa;--fg2:#a0a0a0;--fg3:#60606.tab img{
+    width:40px;
+    height:40px;
+    object-fit:contain;
+    image-rendering:auto;
+}
   --gld:#FFD700;--gld-h:#FFC200;--gld-m:#b8860b;--gld-g:rgba(255,215,0,0.15);--gld-u:rgba(255,215,0,0.06);
   --r:12px;--mw:1352px;--hdr-h:60px;
   font-family:'Inter',system-ui,sans-serif;
@@ -137,7 +142,7 @@ html.light .btab{background:rgba(240,240,240,.92);border-top:1px solid var(--bd)
 .fc p{font-size:12px;color:var(--fg2);letter-spacing:.2px}
 /* IP Card */
 .ipc{padding:20px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:36px}
-.ipc img{width:48px;height:48px;object-fit:contain;flex-shrink:0}
+.ipc img{width:48px;height:48px;object-fi:contain;flex-shrink:0}
 .ipt{font-weight:700;font-size:16px;font-family:'Courier New',monospace;letter-spacing:.5px}
 .ipc .ipr{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
 .ipc .ipr .btn-g,.ipc .ipr .btn-o{display:flex;align-items:center;gap:6px}
@@ -152,7 +157,7 @@ html.light .rk-bar{background:var(--sf);border-color:var(--bd)}
 html.light .tabs-s{background:rgba(0,0,0,.02)}
 .tabs{display:flex;gap:0;min-width:max-content;position:relative}
 .tab{display:flex;align-items:center;gap:5px;padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,background .2s;white-space:nowrap;font-weight:600;font-size:13px;color:var(--fg2)}
-.tab img{width:40px;height:40px;object-fit:contain;image-rendering:auto}
+.tab img{width:52px;height:52px;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 0 4px rgba(255,215,0,.15));flex-shrink:0;}
 .tab:hover{color:var(--fg);background:rgba(255,255,255,.03)}
 .tab.act{color:var(--gld);border-bottom-color:transparent}
 /* Sliding gold indicator */
