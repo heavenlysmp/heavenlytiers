@@ -1676,7 +1676,6 @@ function buildUI(){
 
   // Page headers with SVG
   document.getElementById('rkH').innerHTML=S.trophy+' Rankings';
-  document.getElementById('tsH').innerHTML=S.flask+' Testers';
   document.getElementById('apiH').innerHTML=S.code+' API Documentation';
   document.getElementById('panH').innerHTML=S.crown+' Owner / Admin Panel';
 
