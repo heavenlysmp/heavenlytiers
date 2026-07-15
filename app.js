@@ -811,6 +811,11 @@ function renderRank(){
     return;
   }
 
+  if(actMode!=='Overall'){
+    wrap.innerHTML=renderModeTierCols(actMode,list);
+    return;
+  }
+
   function tierBadges(p){
     return MODES.map(m=>{
       const t=p.tiers[m];const ic=MODE_IC[m]||{u:''};
@@ -850,15 +855,55 @@ function renderRank(){
   processBedrockCanvases();
 }
 
+// mctiers-style leaderboard: 5 tier columns, each split into High/Low sub-groups.
+// Used for any single-mode tab (not Overall, which stays as the detailed row table).
+function renderModeTierCols(mode,list){
+  const cols=[1,2,3,4,5].map(n=>{
+    const htKey='HT'+n,ltKey='LT'+n;
+    const htP=list.filter(p=>p.tiers[mode]===htKey).sort((a,b)=>a.username.localeCompare(b.username));
+    const ltP=list.filter(p=>p.tiers[mode]===ltKey).sort((a,b)=>a.username.localeCompare(b.username));
+    const rows=(arr,cls)=>arr.length?arr.map(p=>`<div class="tc-col-row" onclick="showPD('${p.username.replace(/'/g,"\\'")}')"><span class="tbdg ${cls.toLowerCase()}" style="font-size:9px;margin-right:6px">${cls}</span>${esc(p.username)}</div>`).join(''):`<div class="tc-empty">—</div>`;
+    return `<div class="tc-col">
+      <div class="tc-col-h">${S.trophy} Tier ${n}</div>
+      <div class="tc-col-sub">High</div>
+      ${rows(htP,htKey)}
+      <div class="tc-col-sub">Low</div>
+      ${rows(ltP,ltKey)}
+    </div>`;
+  }).join('');
+  return `<div class="tc-cols">${cols}</div>`;
+}
+
 function showPD(un){
   const p=window.players.find(x=>x.username===un);if(!p)return;
   const c=document.getElementById('pdC');
   const title=getTitle(p);const pts=getPoints(p);
-  // skin is loaded asynchronously via initSkinViewer
   const prog=getProgress(pts);
+  const st=skinType(p);
+
+  // Overall rank — same population/order as the Overall tab
+  const ranked=window.players.filter(x=>getPoints(x)>0).sort((a,b)=>getPoints(b)-getPoints(a));
+  const rankIdx=ranked.findIndex(x=>x.username===p.username);
+  const rank=rankIdx>=0?rankIdx+1:null;
+
+  const bodyUrl=getBodyRenderUrl(p);
+  const avatarHtml=bodyUrl
+    ?`<img src="${esc(bodyUrl)}" alt="${esc(p.username)}" onerror="this.style.display='none';this.parentNode.querySelector('.pd-av-fb').style.display=''"/><div class="pd-av-fb" style="display:none">${S.person}</div>`
+    :`<div class="pd-av-fb">${S.person}</div>`;
+
+  const nameMcLink=st==='java'
+    ?`<a class="pd-namemc" href="https://namemc.com/profile/${encodeURIComponent(p.username)}" target="_blank" rel="noopener">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        NameMC <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+      </a>`
+    :'';
+
   let badges=MODES.map(m=>{
-    const t=p.tiers[m]||'—';const cls=p.tiers[m]?p.tiers[m].toLowerCase():'';
-    return `<div class="bi"><div class="mn">${m}</div><span class="tbdg ${cls}" style="font-size:10px">${t}</span></div>`;
+    const t=p.tiers[m];const ic=MODE_IC[m]||{u:''};
+    return `<div class="pd-tier-item ${t?'has-tier':''}">
+      ${ic.u?`<img src="${ic.u}" alt="${esc(m)}" onerror="this.style.display='none'"/>`:`<span style="font-size:9px;font-weight:700">${esc(m.slice(0,2))}</span>`}
+      <span class="tbdg ${t?t.toLowerCase():''}" style="font-size:9px">${t||'—'}</span>
+    </div>`;
   }).join('');
 
   let warn='';
@@ -868,24 +913,20 @@ function showPD(un){
 
   c.innerHTML=`<div class="mhandle"></div>
   <button class="mcl" onclick="closeMs()"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-  <div class="pd-b">
-    <div class="sv-wrap" id="pdSkinViewer"></div>
-    <div class="pd-i">
-      <h2>${esc(p.username)}<span class="cpn" onclick="event.stopPropagation();navigator.clipboard.writeText('${esc(p.username)}');toast('Username copied!','success')">${S.copy}</span></h2>
-      <div class="tit-ln">${titlePill(title.name)} <span class="pts">${pts} points</span></div>
-      <div class="rg">${p.region} &middot; ${skinType(p)==='java'?'Java (Premium)':skinType(p)==='bedrock'?'Bedrock':skinType(p)==='raw'?'Raw PNG':'No Skin'}</div>
-      <div class="prog-w"><div class="prog" style="width:${prog.pct}%"></div></div>
-      <div class="prog-lbl">${prog.label}</div>
-      <div class="bg">${badges}</div>
-      ${warn}
-    </div>
-  </div>`;
+  <div class="pd-hero">
+    <div class="pd-av-circle">${S.crown}${avatarHtml}</div>
+    <h2>${esc(p.username)}<span class="cpn" onclick="event.stopPropagation();navigator.clipboard.writeText('${esc(p.username)}');toast('Username copied!','success')">${S.copy}</span></h2>
+    <div class="tit-ln">${titlePill(title.name)}</div>
+    <div class="rg">${p.region}</div>
+    ${nameMcLink}
+  </div>
+  ${rank?`<div class="pd-pos-lbl">POSITION</div><div class="pd-pos-banner"><span class="pd-pos-num">${rank}.</span>${S.trophy}<span>OVERALL</span><span class="pd-pos-pts">(${pts} points)</span></div>`:''}
+  <div class="pd-pos-lbl" style="margin-top:16px">TIERS</div>
+  <div class="pd-tier-grid">${badges}</div>
+  ${warn}
+  <div class="prog-w" style="margin-top:14px"><div class="prog" style="width:${prog.pct}%"></div></div>
+  <div class="prog-lbl">${prog.label}</div>`;
   openM('pdM');
-  // Init skinview3d after modal opens (needs DOM to be visible)
-  setTimeout(()=>{
-    const sv=document.getElementById('pdSkinViewer');
-    if(sv)initSkinViewer(sv,p,120,240);
-  },100);
 }
 
 // ===== TESTERS (Lanyard REST + WebSocket) =====
