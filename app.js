@@ -206,17 +206,19 @@ function sC(u){localStorage.setItem('hcu',JSON.stringify(u))}
 // Tester IDs seeded post cloud-ready (see init at bottom) — avoids race with Firestore load.
 
 // ===== SETTINGS =====
-function gS(){return lsg('hs',{title:'Heavenly Tiers',tagline:'Rise Through the Ranks',discord:'https://discord.gg/M58KAtGzhy'})}
+function gS(){return lsg('hs',{title:'Heavenly Tiers',tagline:'Rise Through the Ranks',discord:'https://discord.gg/M58KAtGzhy',serverIp:'heavenlyevents.falix.gg'})}
 function apS(){
   const s=gS();
   document.getElementById('heroT').textContent=s.title;
   document.getElementById('heroS').textContent=s.tagline;
   document.getElementById('hdrT').textContent=s.title;
   document.title=s.title;
+  const ipEl=document.getElementById('srvIp');
+  if(ipEl)ipEl.textContent=s.serverIp;
 }
 
 // ===== LOG =====
-function logA(d){let l=lsg('hal',[]);l.unshift({ts:new Date().toLocaleString(),desc:d});if(l.length>100)l=l.slice(0,100);lss('hal',l)}
+function logA(d,payload){let l=lsg('hal',[]);l.unshift({ts:new Date().toLocaleString(),desc:d,payload:payload||null});if(l.length>100)l=l.slice(0,100);lss('hal',l)}
 
 // ===== TOAST =====
 function toast(m,t='info'){
@@ -436,7 +438,7 @@ function onSearch(){
 
 // ===== COPY IP =====
 function copyIP(){
-  navigator.clipboard.writeText('play.heavenlytiers.net')
+  navigator.clipboard.writeText(gS().serverIp)
     .then(()=>toast('IP copied!','success'))
     .catch(()=>toast('Failed to copy','error'));
 }
@@ -1041,6 +1043,7 @@ function buildSettings(){
     <div class="pf"><label>Site Title</label><input type="text" id="sT" value="${esc(s.title)}"/></div>
     <div class="pf"><label>Tagline</label><input type="text" id="sTg" value="${esc(s.tagline)}"/></div>
     <div class="pf"><label>Discord Invite Link</label><input type="text" id="sDc" value="${esc(s.discord)}"/></div>
+    <div class="pf"><label>Server IP</label><input type="text" id="sIp" value="${esc(s.serverIp)}" placeholder="play.example.net"/></div>
     <hr style="border-color:var(--bd);margin:18px 0"/>
     <h3 style="font-weight:700;font-size:15px;margin-bottom:10px">🎭 Discord Role Auto-Assign</h3>
     <p style="font-size:12px;color:var(--fg3);margin-bottom:12px">Paste the <strong>WEBSITE_TOKEN</strong> from your <code>.env</code> file. This lets the website tell your bot to assign roles when a player earns a new title.</p>
@@ -1118,7 +1121,8 @@ function saveSets(){
   const s={
     title:document.getElementById('sT').value.trim()||'Heavenly Tiers',
     tagline:document.getElementById('sTg').value.trim()||'Rise Through the Ranks',
-    discord:document.getElementById('sDc').value.trim()||'https://discord.gg/xJ9r4vyG'
+    discord:document.getElementById('sDc').value.trim()||'https://discord.gg/xJ9r4vyG',
+    serverIp:document.getElementById('sIp').value.trim()||'play.example.net'
   };
   const wt=document.getElementById('sWt').value.trim();
   if(wt)lss('ht_wt',wt);
@@ -1182,7 +1186,7 @@ function addEdit(){
     if(st==='raw'){p.skinUrl=rawSkinUrl;p.isPremium=false;}
     if(st==='bedrock'){p.bedrockGt=bedrockGt;p.isPremium=false;}
     if(did)p.discordId=did;
-    logA('Updated '+un+': '+selectedModes.join(',')+'to '+tr+' by '+c.email);
+    logA('Updated '+un+': '+selectedModes.join(',')+'to '+tr+' by '+c.email,{type:'updateTiers',username:un,tiers:oldTiers});
     toast('Updated '+un+' — '+selectedModes.length+' mode(s): '+tr,'success');
   }else{
     p={username:un,region:rg,tiers:{},skinType:st,isPremium:st==='java',discordId:did||''};
@@ -1190,7 +1194,7 @@ function addEdit(){
     if(st==='bedrock')p.bedrockGt=bedrockGt;
     selectedModes.forEach(m=>p.tiers[m]=tr);
     window.players.push(p);
-    logA('Added '+un+' ('+rg+', '+selectedModes.join(',')+': '+tr+') by '+c.email);
+    logA('Added '+un+' ('+rg+', '+selectedModes.join(',')+': '+tr+') by '+c.email,{type:'addPlayer',username:un});
     toast('Added '+un,'success');
   }
 
@@ -1273,9 +1277,11 @@ function cfmRm(un){
   const y=document.getElementById('cfmY');
   y.textContent='Yes, Remove';
   y.onclick=()=>{
+    const removed=window.players.find(p=>p.username===un);
+    const snapshot=removed?JSON.parse(JSON.stringify(removed)):null;
     window.players=window.players.filter(p=>p.username!==un);
     savePlayers();
-    const c=gC();logA(`Removed ${un} by ${c?c.email:'unknown'}`);
+    const c=gC();logA(`Removed ${un} by ${c?c.email:'unknown'}`,{type:'removePlayer',player:snapshot});
     toast(`Removed ${un}`,'success');closeMs();renderRmL();
     if(curPg==='rankings')renderRank();
   };
@@ -1445,7 +1451,7 @@ function editModeIcon(modeName){
   const c=gC();if(!c||c.role!=='Owner')return toast('Owner only','error');
   MODE_IC[modeName]={u:newUrl.trim()};
   saveModes();
-  logA(`Changed icon for "${modeName}" by ${c.email}`);
+  logA(`Changed icon for "${modeName}" by ${c.email}`,{type:'changeIcon',mode:modeName,url:cur});
   toast(`Icon updated for ${modeName}`,'success');
   renderModeMgmt();
   if(curPg==='rankings')renderRank();
@@ -1560,7 +1566,52 @@ function renderLogL(){
   const l=document.getElementById('psLog');
   l.innerHTML=`<h2 style="font-weight:700;font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:8px">${S.log} Action Log</h2>`;
   if(!logs.length){l.innerHTML+='<p style="color:var(--fg3)">No actions logged yet.</p>';return}
-  l.innerHTML+=`<div class="ll">${logs.map(x=>`<div class="li">${S.clock}<span class="ts">${x.ts}</span><span>${esc(x.desc)}</span></div>`).join('')}</div>`;
+  l.innerHTML+=`<div class="ll">${logs.map((x,i)=>`<div class="li">${S.clock}<span class="ts">${x.ts}</span><span>${esc(x.desc)}</span>${x.payload?`<button class="log-redo" onclick="redoLogAction(${i})" title="Reverse this action">↺ Redo</button>`:''}</div>`).join('')}</div>`;
+}
+
+// Reverses a specific logged action using the payload snapshot captured at log time.
+// Only entries with a stored payload show a Redo button — older/unsupported entries won't.
+function redoLogAction(i){
+  const logs=lsg('hal',[]);
+  const entry=logs[i];
+  if(!entry||!entry.payload)return;
+  const p=entry.payload;
+  const c=gC();
+  switch(p.type){
+    case 'removePlayer':
+      if(!p.player)return toast('No snapshot to restore','error');
+      if(window.players.find(x=>x.username===p.player.username))return toast(p.player.username+' already exists','error');
+      window.players.push(p.player);
+      savePlayers();
+      toast('Restored '+p.player.username,'success');
+      if(curPg==='rankings')renderRank();
+      break;
+    case 'addPlayer':
+      window.players=window.players.filter(x=>x.username!==p.username);
+      savePlayers();
+      toast('Removed '+p.username,'success');
+      if(curPg==='rankings')renderRank();
+      break;
+    case 'updateTiers':
+      { const pl=window.players.find(x=>x.username===p.username);
+        if(!pl)return toast(p.username+' not found','error');
+        pl.tiers=JSON.parse(JSON.stringify(p.tiers));
+        savePlayers();
+        toast('Reverted tiers for '+p.username,'success');
+        if(curPg==='rankings')renderRank();
+      }
+      break;
+    case 'changeIcon':
+      MODE_IC[p.mode]={u:p.url};
+      saveModes();
+      toast('Reverted icon for '+p.mode,'success');
+      if(curPg==='rankings')renderRank();
+      break;
+    default:
+      return toast('This action type can\'t be auto-reverted','error');
+  }
+  logA(`${c?c.email:'unknown'} used Redo on: "${entry.desc}"`);
+  renderLogL();
 }
 
 // ===== BACK TO TOP =====
