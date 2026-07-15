@@ -156,9 +156,8 @@ html.light .rk-bar{background:var(--sf);border-color:var(--bd)}
 .tabs-s{overflow-x:auto;-webkit-overflow-scrolling:touch;background:rgba(255,255,255,.03)}
 html.light .tabs-s{background:rgba(0,0,0,.02)}
 .tabs{display:flex;gap:0;min-width:max-content;position:relative}
-.tab{display:flex;align-items:center;gap:5px;padding:10px14px;}
-.tab img{width:40px;height:40px;object-fit:contain;image-rendering:auto;
-}
+.tab{display:flex;align-items:center;gap:5px;padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,background .2s;white-space:nowrap;font-weight:600;font-size:13px;color:var(--fg2)}
+.tab img{width:52px;height:52px;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 0 4px rgba(255,215,0,.15));flex-shrink:0;}
 .tab:hover{color:var(--fg);background:rgba(255,255,255,.03)}
 .tab.act{color:var(--gld);border-bottom-color:transparent}
 /* Sliding gold indicator */
