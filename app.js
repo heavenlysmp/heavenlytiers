@@ -215,6 +215,8 @@ function apS(){
   document.title=s.title;
   const ipEl=document.getElementById('srvIp');
   if(ipEl)ipEl.textContent=s.serverIp;
+  const dcCardBtn=document.getElementById('dcCardBtn');
+  if(dcCardBtn)dcCardBtn.onclick=()=>window.open(s.discord,'_blank');
 }
 
 // ===== LOG =====
@@ -1520,6 +1522,7 @@ function userCard(u,cur){
     btns=isAdmin
       ?`<button class="btn-demote" onclick="setRole('${esc(u.email)}','Member')">Revoke Admin</button>`
       :`<button class="btn-promote" onclick="setRole('${esc(u.email)}','Admin')">Make Admin</button>`;
+    btns+=`<button class="btn-demote" style="background:rgba(255,56,96,.15);color:#ff3860;border-color:rgba(255,56,96,.3)" onclick="cfmDelUser('${esc(u.email)}')">Delete User</button>`;
   }
 
   return `<div class="usr-card ${isOwner?'is-owner':isAdmin?'is-admin':''}" data-email="${esc(u.email)}" data-name="${esc((u.username||u.email).toLowerCase())}">
@@ -1544,13 +1547,35 @@ function filterAdmUsers(q){
   });
 }
 
-function setRole(email,newRole){
-  const c=gC();
-  if(!c||c.role!=='Owner')return toast('Owner only','error');
+function cfmDelUser(email){
+  const c=gC();if(!c||c.role!=='Owner')return toast('Owner only','error');
+  const us=gU();
+  const u=us.find(x=>x.email===email);
+  if(!u)return toast('User not found','error');
+  if(u.role==='Owner')return toast('Cannot delete the Owner account','error');
+  if(u.email===c.email)return toast('Cannot delete your own account here — use Danger Zone in the account menu','error');
+  document.getElementById('cfmH').innerHTML=S.warn+' Confirm User Deletion';
+  document.getElementById('cfmMsg').textContent=`Permanently delete "${u.username||u.email}"? This cannot be undone.`;
+  const y=document.getElementById('cfmY');
+  y.textContent='Yes, Delete';
+  y.onclick=()=>doDelUser(email);
+  openM('cfmM');
+}
+function doDelUser(email){
+  const c=gC();if(!c||c.role!=='Owner')return;
   let us=gU();
   const u=us.find(x=>x.email===email);
   if(!u)return toast('User not found','error');
-  if(u.role==='Owner')return toast('Cannot modify the Owner account','error');
+  if(u.role==='Owner')return toast('Cannot delete the Owner account','error');
+  us=us.filter(x=>x.email!==email);
+  sU(us);
+  logA(`${u.username||u.email} deleted by ${c.email}`);
+  closeMs();
+  toast('User deleted','success');
+  buildAdminSec();
+}
+function setRole(email,newRole){
+  const c=gC();
   if(u.email===c.email)return toast('Cannot change your own role','error');
 
   const label=newRole==='Admin'?'Granted Admin to':'Revoked Admin from';
