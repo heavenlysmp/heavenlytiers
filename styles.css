@@ -174,9 +174,16 @@ html.light th{border-bottom-color:var(--bd)}
 td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
 html.light td{border-bottom-color:var(--bd2)}
 tr.rw{transition:background .25s ease;cursor:pointer;position:relative}
-tr.rw:hover{background:linear-gradient(90deg,rgba(35,209,96,.16) 0%,rgba(35,209,96,.05) 55%,transparent 100%)}
-tr.rw:hover td:first-child{box-shadow:inset 3px 0 0 #23d160}
-html.light tr.rw:hover{background:linear-gradient(90deg,rgba(35,209,96,.12) 0%,rgba(35,209,96,.03) 55%,transparent 100%)}
+tr.rw td{position:relative;z-index:1}
+tr.rw::before{content:'';position:absolute;inset:0;transform:scaleX(0);transform-origin:left;transition:transform .3s cubic-bezier(.4,0,.2,1);background:linear-gradient(90deg,rgba(160,174,192,.16) 0%,rgba(160,174,192,.04) 60%,transparent 100%);z-index:0;pointer-events:none}
+tr.rw.r1::before{background:linear-gradient(90deg,rgba(255,215,0,.22) 0%,rgba(255,215,0,.05) 60%,transparent 100%)}
+tr.rw.r2::before{background:linear-gradient(90deg,rgba(192,192,192,.2) 0%,rgba(192,192,192,.05) 60%,transparent 100%)}
+tr.rw.r3::before{background:linear-gradient(90deg,rgba(205,127,50,.2) 0%,rgba(205,127,50,.05) 60%,transparent 100%)}
+tr.rw:hover::before{transform:scaleX(1)}
+tr.rw:hover td:first-child{box-shadow:inset 3px 0 0 var(--gld)}
+tr.rw.r1:hover td:first-child{box-shadow:inset 3px 0 0 #FFD700}
+tr.rw.r2:hover td:first-child{box-shadow:inset 3px 0 0 #C0C0C0}
+tr.rw.r3:hover td:first-child{box-shadow:inset 3px 0 0 #CD7F32}
 @keyframes rowIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 tr.r1{border-left:3px solid #FFD700;background:linear-gradient(90deg,rgba(255,215,0,.06) 0%,transparent 40%)}
 tr.r2{border-left:3px solid #C0C0C0;background:linear-gradient(90deg,rgba(192,192,192,.04) 0%,transparent 40%)}
