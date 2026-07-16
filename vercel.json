@@ -5,7 +5,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://iili.io https://static.wikia.nocookie.net https://render.crafty.gg https://textures.minecraft.net https://mc-heads.net https://visage.surgeplay.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://*.firebaseio.com https://firebaseinstallations.googleapis.com https://content-firebaseinstallations.googleapis.com https://api.geysermc.org https://textures.minecraft.net https://mc-heads.net https://visage.surgeplay.com;"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://iili.io https://static.wikia.nocookie.net https://render.crafty.gg https://textures.minecraft.net https://mc-heads.net https://visage.surgeplay.com https://mc-api.io; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://*.firebaseio.com https://firebaseinstallations.googleapis.com https://content-firebaseinstallations.googleapis.com https://api.geysermc.org https://textures.minecraft.net https://mc-heads.net https://visage.surgeplay.com https://mc-api.io;"
         }
       ]
     }
