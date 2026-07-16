@@ -359,14 +359,14 @@ function openOwnerPinStep(){
 }
 function submitOwnerPin(){
   const u=_pendingOwnerLogin;if(!u)return;
-  const val=document.getElementById('opPinInput').value.trim();
-  if(!/^\d{4}$/.test(val))return toast('PIN must be exactly 4 digits','error');
+  const val=document.getElementById('opPinInput').value.replace(/\D/g,'');
+  if(val.length!==4)return toast('PIN must be exactly 4 digits','error');
   if(u.pin){
     if(val!==u.pin)return toast('Incorrect PIN','error');
     closeMs();sC(u);upAuth();toast('Logged in as Owner','success');
     _pendingOwnerLogin=null;
   }else{
-    const conf=document.getElementById('opPinConfirm').value.trim();
+    const conf=document.getElementById('opPinConfirm').value.replace(/\D/g,'');
     if(val!==conf)return toast('PINs do not match','error');
     let us=gU();
     const idx=us.findIndex(x=>x.email===u.email);
@@ -496,8 +496,8 @@ function getBodyRenderUrl(p){
     return 'https://render.crafty.gg/3d/bust/'+encodeURIComponent(p.uuid||p.username);
   }
   if(st==='bedrock'){
-    if(p.renderUrl)return p.renderUrl; // cached 3D bust URL (resolved via textureHash below)
-    return null; // not resolved yet — table cell falls back to placeholder, async resolves + re-renders
+    if(!p.bedrockGt)return null;
+    return 'https://mc-api.io/render/bust/'+encodeURIComponent(p.bedrockGt)+'/bedrock?size=256';
   }
   if(st==='raw')return null; // no known-identity — canvas fallback only
   return null;
