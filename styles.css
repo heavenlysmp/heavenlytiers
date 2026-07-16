@@ -186,6 +186,8 @@ tr.rw.r2{background-image:linear-gradient(90deg,rgba(192,192,192,.24) 0%,rgba(19
 tr.rw.r3{background-image:linear-gradient(90deg,rgba(205,127,50,.24) 0%,rgba(205,127,50,.05) 70%,transparent 100%)}
 tr.rw:hover{background-position:0% 0}
 tr.rw:hover td:first-child{box-shadow:inset 3px 0 0 var(--gld)}
+tr.rw td:not(:first-child){transition:transform .3s cubic-bezier(.4,0,.2,1)}
+tr.rw:hover td:not(:first-child){transform:translateX(-10px)}
 tr.rw.r1:hover td:first-child{box-shadow:inset 3px 0 0 #FFD700}
 tr.rw.r2:hover td:first-child{box-shadow:inset 3px 0 0 #C0C0C0}
 tr.rw.r3:hover td:first-child{box-shadow:inset 3px 0 0 #CD7F32}
