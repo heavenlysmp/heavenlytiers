@@ -359,14 +359,14 @@ function openOwnerPinStep(){
 }
 function submitOwnerPin(){
   const u=_pendingOwnerLogin;if(!u)return;
-  const val=document.getElementById('opPinInput').value.replace(/\D/g,'');
+  const val=document.getElementById('opPinInput').value.replace(/\D/g,'').slice(0,4);
   if(val.length!==4)return toast('PIN must be exactly 4 digits','error');
   if(u.pin){
     if(val!==u.pin)return toast('Incorrect PIN','error');
     closeMs();sC(u);upAuth();toast('Logged in as Owner','success');
     _pendingOwnerLogin=null;
   }else{
-    const conf=document.getElementById('opPinConfirm').value.replace(/\D/g,'');
+    const conf=document.getElementById('opPinConfirm').value.replace(/\D/g,'').slice(0,4);
     if(val!==conf)return toast('PINs do not match','error');
     let us=gU();
     const idx=us.findIndex(x=>x.email===u.email);
