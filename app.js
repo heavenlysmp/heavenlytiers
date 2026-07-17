@@ -111,6 +111,31 @@ const MODE_FB='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" strok
 // Region → flag emoji (continents, since regions aren't single countries)
 const REGION_FLAG={NA:'🌎',EU:'🇪🇺',AS:'🌏',SA:'🌎',OC:'🌏',AF:'🌍'};
 
+// Inline SVG icons for built-in game modes — no external image host needed, can't ever 404/hotlink-block.
+const MODE_SVG={
+  Axe:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21L17 10a3.5 3.5 0 000-5 3.5 3.5 0 00-5 0L1 16l2 2 8-8"/><path d="M15 6l3 3"/></svg>',
+  Sword:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M15 21l6-6"/></svg>',
+  Pot:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6M10 2v4.5L6 12v8a2 2 0 002 2h8a2 2 0 002-2v-8l-4-5.5V2"/><circle cx="12" cy="15" r="2.2" fill="currentColor" stroke="none"/></svg>',
+  NethPot:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6M10 2v4.5L6 12v8a2 2 0 002 2h8a2 2 0 002-2v-8l-4-5.5V2"/><path d="M12 12.5l1.2 2.2h2.3L13.8 16l.7 2.3L12 17l-2.5 1.3.7-2.3-1.7-1.3h2.3z" fill="currentColor" stroke="none"/></svg>',
+  UHC:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 1.5 1 2.8 0 4-1-1.2-1-2.5 0-4z" fill="currentColor" stroke="none"/><path d="M12 21c-4.4 0-8-3.1-8-7.5C4 9.6 8 8 12 8s8 1.6 8 5.5C20 17.9 16.4 21 12 21z"/></svg>',
+  Crystal:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 5-3 15H8L5 7l7-5z"/><path d="M9 7h6M8 9.5h8"/></svg>',
+  SMP:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M4 9h16M9 4v16"/></svg>',
+  Mace:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3l7 7-9 9-7-7z"/><path d="M12 14L3 23"/><circle cx="14" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="9" r="1" fill="currentColor" stroke="none"/></svg>',
+  Lifesteal:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.7-10-9.3C.4 8.4 2 5 5.5 5c2 0 3.5 1.3 4.5 2.8C11 6.3 12.5 5 14.5 5 18 5 19.6 8.4 22 11.7 19.5 16.3 12 21 12 21z"/></svg>',
+  Spear:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21L15 9M13 3l4 4-2.5 2.5-4-4z"/></svg>',
+  'Spear-Mace':'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21L12 12M11 4l4 4-2 2-4-4z"/><path d="M15 15l6 6M17 13l4 4"/></svg>',
+  Overall:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 010-5H6M18 9h1.5a2.5 2.5 0 000-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0012 0V2z"/></svg>'
+};
+
+// Returns the icon markup for a mode: inline SVG for built-ins (never breaks/hotlink-blocks),
+// else falls back to the owner's custom icon URL (with a safe fallback glyph if that 404s).
+function modeIconMarkup(modeName){
+  if(MODE_SVG[modeName])return MODE_SVG[modeName];
+  const ic=MODE_IC[modeName];
+  if(ic&&ic.u)return `<img src="${esc(ic.u)}" alt="${esc(modeName)}" onerror="this.style.display='none';this.nextElementSibling.style.display=''"/><span class="mode-fb-ico" style="display:none">${MODE_FB}</span>`;
+  return `<span class="mode-fb-ico">${MODE_FB}</span>`;
+}
+
 // Person silhouette SVG for cracked skins
 const PERSON_SM=`<div class="svgp">${S.person}</div>`;
 const PERSON_LG=`<div class="svgp svgp-lg">${S.person}</div>`;
@@ -736,28 +761,35 @@ function buildTabs(){
   tc.appendChild(ind);
 
   ['Overall',...MODES].forEach(m=>{
-    const ic=MODE_IC[m]||{u:''};
     const d=document.createElement('div');
     d.className='tab'+(m===actMode?' act':'');
     d.onclick=()=>{actMode=m;slideTabTo(d);renderRank()};
 
-    // Build icon using DOM — avoids quote-escaping bugs in innerHTML onerror attributes
-    if(ic.u){
-      const img=document.createElement('img');
-      img.src=ic.u;
-      img.alt=m;
-      img.style.cssText='width:40px;height:40px;object-fit:contain;image-rendering:auto;flex-shrink:0';
-      img.onerror=function(){
+    if(MODE_SVG[m]){
+      const wrap=document.createElement('span');
+      wrap.className='tab-svg';
+      wrap.innerHTML=MODE_SVG[m];
+      d.appendChild(wrap.firstChild);
+    }else{
+      const ic=MODE_IC[m]||{u:''};
+      // Build icon using DOM — avoids quote-escaping bugs in innerHTML onerror attributes
+      if(ic.u){
+        const img=document.createElement('img');
+        img.src=ic.u;
+        img.alt=m;
+        img.style.cssText='width:40px;height:40px;object-fit:contain;image-rendering:auto;flex-shrink:0';
+        img.onerror=function(){
+          const fb=document.createElement('span');
+          fb.innerHTML=MODE_FB;
+          this.parentNode.insertBefore(fb.firstChild,this);
+          this.remove();
+        };
+        d.appendChild(img);
+      }else{
         const fb=document.createElement('span');
         fb.innerHTML=MODE_FB;
-        this.parentNode.insertBefore(fb.firstChild,this);
-        this.remove();
-      };
-      d.appendChild(img);
-    }else{
-      const fb=document.createElement('span');
-      fb.innerHTML=MODE_FB;
-      d.appendChild(fb.firstChild);
+        d.appendChild(fb.firstChild);
+      }
     }
     d.appendChild(document.createTextNode('\u00A0'+m));
     tc.appendChild(d);
@@ -829,7 +861,7 @@ function renderRank(){
       const cls=t?'tc-'+t.toLowerCase():'tc-no';
       const pts=t?TIER_PTS[t]:0;const label=t||'-';
       const tip=t?`${m}: ${t} (${pts} pts)`:`${m}: No tier`;
-      return `<div class="tbc"><div class="tp">${esc(tip)}</div><div class="tc ${cls}">${ic.u?`<img src="${ic.u}" alt="${esc(m)}" onerror="this.style.display='none'"/>`:`<span style="font-size:9px;font-weight:700">${esc(m.slice(0,2))}</span>`}</div><div class="tl">${label}</div></div>`;
+      return `<div class="tbc"><div class="tp">${esc(tip)}</div><div class="tc ${cls}">${modeIconMarkup(m)}</div><div class="tl">${label}</div></div>`;
     }).join('');
   }
 
@@ -945,9 +977,9 @@ function showPD(un){
   const copyLinkBtn=`<button class="pd-social" title="Copy profile link" onclick="event.stopPropagation();navigator.clipboard.writeText('${esc(shareUrl)}');toast('Profile link copied!','success')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.07 0l1.93-1.93a5 5 0 00-7.07-7.07L10.5 5.5M14 11a5 5 0 00-7.07 0l-1.93 1.93a5 5 0 007.07 7.07L13.5 18.5"/></svg></button>`;
 
   let badges=MODES.map(m=>{
-    const t=p.tiers[m];const ic=MODE_IC[m]||{u:''};
+    const t=p.tiers[m];
     return `<div class="pd-tier-item ${t?'has-tier':''}">
-      ${ic.u?`<img src="${ic.u}" alt="${esc(m)}" onerror="this.style.display='none'"/>`:`<span style="font-size:9px;font-weight:700">${esc(m.slice(0,2))}</span>`}
+      ${modeIconMarkup(m)}
       <span class="tbdg ${t?t.toLowerCase():''}" style="font-size:9px">${t||'—'}</span>
     </div>`;
   }).join('');
@@ -1159,8 +1191,7 @@ function buildSettings(){
 
 function buildAddEdit(){
   const modesHtml=MODES.map(m=>{
-    const ic=MODE_IC[m]||{u:''};
-    return `<label><input type="checkbox" value="${esc(m)}"/>${ic.u?`<img src="${ic.u}" alt="${esc(m)}" onerror="this.style.display='none'"/>`:''} ${esc(m)}</label>`;
+    return `<label><input type="checkbox" value="${esc(m)}"/>${modeIconMarkup(m)} ${esc(m)}</label>`;
   }).join('');
 
   document.getElementById('psAdd').innerHTML=`
@@ -1487,12 +1518,14 @@ function renderModeMgmt(){
   const cards=MODES.map((m,i)=>{
     const ic=MODE_IC[m];
     const hasImg=ic&&ic.u;
+    const builtIn=MODE_SVG[m];
     return `<div class="mm-card" data-mode="${esc(m)}">
       ${hasImg?`<img src="${ic.u}" alt="${esc(m)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="mm-noimg" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`
+        :builtIn?`<div class="mm-noimg" style="display:flex">${builtIn}</div>`
         :`<div class="mm-noimg"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`}
       <div class="mm-info">
         <div class="mm-name">${esc(m)}</div>
-        ${hasImg?`<div class="mm-url">${esc(ic.u)}</div>`:'<div class="mm-url" style="color:var(--fg3);font-style:italic">No icon</div>'}
+        ${hasImg?`<div class="mm-url">${esc(ic.u)}</div>`:builtIn?'<div class="mm-url" style="color:var(--fg3);font-style:italic">Built-in icon (no URL needed)</div>':'<div class="mm-url" style="color:var(--fg3);font-style:italic">No icon</div>'}
       </div>
       <div class="mm-acts">
         <button onclick="renameMode('${m.replace(/'/g,"\\'")}')" title="Rename">${S.edit}</button>
