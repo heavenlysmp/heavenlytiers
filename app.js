@@ -108,6 +108,9 @@ const LT2_OK=['HT1','LT1','HT2','LT2'];
 // SVG fallback shape for broken mode icons
 const MODE_FB='<svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="20" height="20" rx="4"/><path d="M10 14h8M14 10v8"/></svg>';
 
+// Region → flag emoji (continents, since regions aren't single countries)
+const REGION_FLAG={NA:'🌎',EU:'🇪🇺',AS:'🌏',SA:'🌎',OC:'🌏',AF:'🌍'};
+
 // Person silhouette SVG for cracked skins
 const PERSON_SM=`<div class="svgp">${S.person}</div>`;
 const PERSON_LG=`<div class="svgp svgp-lg">${S.person}</div>`;
@@ -246,7 +249,11 @@ function updThemeIcon(){
 
 // ===== MODAL =====
 function openM(id){document.getElementById(id).classList.add('vis')}
-function closeMs(){document.querySelectorAll('.mbg').forEach(m=>m.classList.remove('vis'));closeHam()}
+function closeMs(){
+  document.querySelectorAll('.mbg').forEach(m=>m.classList.remove('vis'));
+  closeHam();
+  if(location.hash.startsWith('#player='))history.replaceState(null,'',location.pathname);
+}
 function showAuthTab(t){
   document.getElementById('authLogin').style.display=t==='login'?'':'none';
   document.getElementById('authSign').style.display=t==='signup'?'':'none';
@@ -883,6 +890,25 @@ function renderModeTierCols(mode,list){
   return cards.trim()?`<div class="tc-board">${cards}</div>`:`<div class="em">${S.inbox}<p>No players have a tier in this mode yet.</p></div>`;
 }
 
+// ===== CONFETTI (for #1 profile) =====
+function fireConfetti(){
+  const colors=['#FFD700','#FFC200','#fff','#c084fc','#60a5fa'];
+  const wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden';
+  document.body.appendChild(wrap);
+  for(let i=0;i<60;i++){
+    const p=document.createElement('span');
+    const size=4+Math.random()*5;
+    const startX=45+Math.random()*10;
+    const drift=(Math.random()-0.5)*60;
+    const dur=1.6+Math.random()*1.2;
+    const delay=Math.random()*0.3;
+    p.style.cssText=`position:absolute;left:${startX}%;top:35%;width:${size}px;height:${size*1.4}px;background:${colors[i%colors.length]};opacity:0;border-radius:1px;--drift:${drift}px;--dur:${dur}s;animation:confettiFall ${dur}s ease-out ${delay}s forwards;transform:rotate(${Math.random()*360}deg)`;
+    wrap.appendChild(p);
+  }
+  setTimeout(()=>wrap.remove(),3200);
+}
+
 function showPD(un){
   const p=window.players.find(x=>x.username===un);if(!p)return;
   const c=document.getElementById('pdC');
@@ -912,9 +938,11 @@ function showPD(un){
   if(s.youtube)socialLinks+=`<a class="pd-social pd-social-yt" href="${esc(s.youtube)}" target="_blank" rel="noopener" title="YouTube"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2s-.2-1.6-.9-2.4c-.9-1-1.9-1-2.4-1.1C16.9 2.5 12 2.5 12 2.5h0s-4.9 0-8.2.2c-.5.1-1.5.1-2.4 1.1C.7 4.6.5 6.2.5 6.2S.3 8.1.3 10v1.9c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.4c.9 1 2.1.9 2.6 1 1.9.2 8 .2 8 .2s4.9 0 8.2-.3c.5-.1 1.5-.1 2.4-1.1.7-.8.9-2.4.9-2.4s.2-1.9.2-3.8V10c0-1.9-.2-3.8-.2-3.8zM9.7 14.1V7.4l6.5 3.4-6.5 3.3z"/></svg></a>`;
   if(s.twitch)socialLinks+=`<a class="pd-social pd-social-tw" href="${esc(s.twitch)}" target="_blank" rel="noopener" title="Twitch"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M4.3 2L2 7.5V19h5.5V22h3.4L14 19h4.4L22 15.4V2H4.3zM20 14.4l-2.6 2.6h-4.4L10.4 19.6V17H6V4h14v10.4z"/><path d="M16.6 7.4h2v5.1h-2zM11.1 7.4h2v5.1h-2z"/></svg></a>`;
   if(s.twitter)socialLinks+=`<a class="pd-social pd-social-x" href="${esc(s.twitter)}" target="_blank" rel="noopener" title="Twitter / X"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23.3 22h-7l-5.5-7.2L4.5 22H1.4l8.1-9.3L1 2h7.2l5 6.6L18.9 2zm-1.2 18h1.7L7.4 4h-1.8l12.1 16z"/></svg></a>`;
-  const socialsRow=socialLinks?`<div class="pd-socials">${socialLinks}</div>`:'';
 
   const bioBlock=p.bio?`<div class="pd-bio">${esc(p.bio)}</div>`:'';
+
+  const shareUrl=location.origin+location.pathname+'#player='+encodeURIComponent(p.username);
+  const copyLinkBtn=`<button class="pd-social" title="Copy profile link" onclick="event.stopPropagation();navigator.clipboard.writeText('${esc(shareUrl)}');toast('Profile link copied!','success')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.07 0l1.93-1.93a5 5 0 00-7.07-7.07L10.5 5.5M14 11a5 5 0 00-7.07 0l-1.93 1.93a5 5 0 007.07 7.07L13.5 18.5"/></svg></button>`;
 
   let badges=MODES.map(m=>{
     const t=p.tiers[m];const ic=MODE_IC[m]||{u:''};
@@ -935,9 +963,9 @@ function showPD(un){
     <div class="pd-av-circle">${S.crown}${avatarHtml}</div>
     <h2>${esc(p.username)}<span class="cpn" onclick="event.stopPropagation();navigator.clipboard.writeText('${esc(p.username)}');toast('Username copied!','success')">${S.copy}</span></h2>
     <div class="tit-ln">${titlePill(title.name)}</div>
-    <div class="rg">${p.region}</div>
+    <div class="rg">${REGION_FLAG[p.region]||''} ${p.region}</div>
     ${nameMcLink}
-    ${socialsRow}
+    <div class="pd-socials">${socialLinks}${copyLinkBtn}</div>
     ${bioBlock}
   </div>
   ${rank?`<div class="pd-pos-lbl">POSITION</div><div class="pd-pos-banner"><span class="pd-pos-num">${rank}.</span>${S.trophy}<span>OVERALL</span><span class="pd-pos-pts">(${pts} points)</span></div>`:''}
@@ -946,7 +974,9 @@ function showPD(un){
   ${warn}
   <div class="prog-w" style="margin-top:14px"><div class="prog" style="width:${prog.pct}%"></div></div>
   <div class="prog-lbl">${prog.label}</div>`;
+  history.replaceState(null,'','#player='+encodeURIComponent(p.username));
   openM('pdM');
+  if(rank===1)fireConfetti();
 }
 
 // ===== TESTERS (Lanyard REST + WebSocket) =====
@@ -1835,6 +1865,7 @@ updThemeIcon();
 upAuth();
 apS();
 upHdr();
+openDeepLinkedProfile();
 window.addEventListener('cloud-ready',()=>{
   // Prefer Firestore data if it contains something — else keep what was loaded from localStorage on init
   const cloudPlayers = window.cloudStore['hp'];
@@ -1873,4 +1904,13 @@ window.addEventListener('cloud-ready',()=>{
   renderRank();
   upAuth();
   apS();
+  openDeepLinkedProfile();
 });
+
+// Shareable profile links: #player=username opens that profile automatically
+function openDeepLinkedProfile(){
+  const m=location.hash.match(/^#player=(.+)$/);
+  if(!m)return;
+  const un=decodeURIComponent(m[1]);
+  if(window.players.find(p=>p.username===un))showPD(un);
+}
