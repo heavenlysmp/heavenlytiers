@@ -907,6 +907,15 @@ function showPD(un){
       </a>`
     :'';
 
+  const s=p.socials||{};
+  let socialLinks='';
+  if(s.youtube)socialLinks+=`<a class="pd-social pd-social-yt" href="${esc(s.youtube)}" target="_blank" rel="noopener" title="YouTube"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2s-.2-1.6-.9-2.4c-.9-1-1.9-1-2.4-1.1C16.9 2.5 12 2.5 12 2.5h0s-4.9 0-8.2.2c-.5.1-1.5.1-2.4 1.1C.7 4.6.5 6.2.5 6.2S.3 8.1.3 10v1.9c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.4c.9 1 2.1.9 2.6 1 1.9.2 8 .2 8 .2s4.9 0 8.2-.3c.5-.1 1.5-.1 2.4-1.1.7-.8.9-2.4.9-2.4s.2-1.9.2-3.8V10c0-1.9-.2-3.8-.2-3.8zM9.7 14.1V7.4l6.5 3.4-6.5 3.3z"/></svg></a>`;
+  if(s.twitch)socialLinks+=`<a class="pd-social pd-social-tw" href="${esc(s.twitch)}" target="_blank" rel="noopener" title="Twitch"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M4.3 2L2 7.5V19h5.5V22h3.4L14 19h4.4L22 15.4V2H4.3zM20 14.4l-2.6 2.6h-4.4L10.4 19.6V17H6V4h14v10.4z"/><path d="M16.6 7.4h2v5.1h-2zM11.1 7.4h2v5.1h-2z"/></svg></a>`;
+  if(s.twitter)socialLinks+=`<a class="pd-social pd-social-x" href="${esc(s.twitter)}" target="_blank" rel="noopener" title="Twitter / X"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23.3 22h-7l-5.5-7.2L4.5 22H1.4l8.1-9.3L1 2h7.2l5 6.6L18.9 2zm-1.2 18h1.7L7.4 4h-1.8l12.1 16z"/></svg></a>`;
+  const socialsRow=socialLinks?`<div class="pd-socials">${socialLinks}</div>`:'';
+
+  const bioBlock=p.bio?`<div class="pd-bio">${esc(p.bio)}</div>`:'';
+
   let badges=MODES.map(m=>{
     const t=p.tiers[m];const ic=MODE_IC[m]||{u:''};
     return `<div class="pd-tier-item ${t?'has-tier':''}">
@@ -928,6 +937,8 @@ function showPD(un){
     <div class="tit-ln">${titlePill(title.name)}</div>
     <div class="rg">${p.region}</div>
     ${nameMcLink}
+    ${socialsRow}
+    ${bioBlock}
   </div>
   ${rank?`<div class="pd-pos-lbl">POSITION</div><div class="pd-pos-banner"><span class="pd-pos-num">${rank}.</span>${S.trophy}<span>OVERALL</span><span class="pd-pos-pts">(${pts} points)</span></div>`:''}
   <div class="pd-pos-lbl" style="margin-top:16px">TIERS</div>
@@ -1141,6 +1152,14 @@ function buildAddEdit(){
     <div class="pf"><label>Region</label><select id="apR"><option>NA</option><option>EU</option><option>AS</option><option>SA</option><option>OC</option><option>AF</option></select></div>
     <div class="pf"><label>Game Modes (select multiple)</label><div class="modes-grid" id="modesGrid">${modesHtml}</div></div>
     <div class="pf"><label>Tier</label><select id="apTr">${TIERS.map(t=>'<option>'+t+'</option>').join('')}</select></div>
+
+    <hr style="border-color:var(--bd);margin:18px 0"/>
+    <h3 style="font-weight:700;font-size:14px;margin-bottom:10px">Socials & Details <span style="color:var(--fg3);font-size:11px;font-weight:400">(optional — shown on their profile)</span></h3>
+    <div class="pf"><label>YouTube</label><input type="text" id="apYt" placeholder="https://youtube.com/@handle"/></div>
+    <div class="pf"><label>Twitch</label><input type="text" id="apTw" placeholder="https://twitch.tv/handle"/></div>
+    <div class="pf"><label>Twitter / X</label><input type="text" id="apX" placeholder="https://x.com/handle"/></div>
+    <div class="pf"><label>Bio / Notes</label><textarea id="apBio" rows="3" placeholder="Short bio shown on their profile page" style="width:100%;resize:vertical;font-family:inherit"></textarea></div>
+
     <button class="btn-g" onclick="addEdit()" style="margin-top:6px;display:flex;align-items:center;gap:6px">${S.plus} Save Player</button>`;
 
   setSkinTab('java');
@@ -1226,6 +1245,14 @@ function addEdit(){
   if(st==='raw'&&!rawSkinUrl)return toast('Provide a skin PNG URL for Raw type','error');
   if(st==='bedrock'&&!bedrockGt)return toast('Enter the Bedrock gamertag','error');
 
+  // Optional socials & bio
+  const socials={
+    youtube:(document.getElementById('apYt').value||'').trim(),
+    twitch:(document.getElementById('apTw').value||'').trim(),
+    twitter:(document.getElementById('apX').value||'').trim()
+  };
+  const bio=(document.getElementById('apBio').value||'').trim();
+
   let p=window.players.find(x=>x.username.toLowerCase()===un.toLowerCase());
   const oldTitle=p?getTitle(p).name:'Unranked';
   const oldTiers=p?Object.assign({},p.tiers):{};
@@ -1238,12 +1265,16 @@ function addEdit(){
     if(st==='raw'){p.skinUrl=rawSkinUrl;p.isPremium=false;}
     if(st==='bedrock'){p.bedrockGt=bedrockGt;p.isPremium=false;}
     if(did)p.discordId=did;
+    if(socials.youtube||socials.twitch||socials.twitter)p.socials=socials;
+    if(bio)p.bio=bio;
     logA('Updated '+un+': '+selectedModes.join(',')+'to '+tr+' by '+c.email,{type:'updateTiers',username:un,tiers:oldTiers});
     toast('Updated '+un+' — '+selectedModes.length+' mode(s): '+tr,'success');
   }else{
     p={username:un,region:rg,tiers:{},skinType:st,isPremium:st==='java',discordId:did||''};
     if(st==='raw')p.skinUrl=rawSkinUrl;
     if(st==='bedrock')p.bedrockGt=bedrockGt;
+    if(socials.youtube||socials.twitch||socials.twitter)p.socials=socials;
+    if(bio)p.bio=bio;
     selectedModes.forEach(m=>p.tiers[m]=tr);
     window.players.push(p);
     logA('Added '+un+' ('+rg+', '+selectedModes.join(',')+': '+tr+') by '+c.email,{type:'addPlayer',username:un});
