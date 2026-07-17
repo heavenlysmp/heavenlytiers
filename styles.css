@@ -107,6 +107,7 @@ html.light .btab{background:rgba(240,240,240,.92);border-top:1px solid var(--bd)
 .page.vis{display:block;animation:pgIn .2s ease-out}
 @keyframes pgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes rowIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes confettiFall{0%{opacity:1;transform:translateY(0) translateX(0) rotate(0deg)}100%{opacity:0;transform:translateY(70vh) translateX(var(--drift)) rotate(540deg)}}
 
 /* === Hero === */
 .hero{text-align:center;padding:60px 20px 40px;position:relative;overflow:hidden}
@@ -187,7 +188,6 @@ tr.rw:hover td{transform:translateX(-14px)}
 tr.rw.r1:hover td:first-child{box-shadow:inset 3px 0 0 #FFD700}
 tr.rw.r2:hover td:first-child{box-shadow:inset 3px 0 0 #C0C0C0}
 tr.rw.r3:hover td:first-child{box-shadow:inset 3px 0 0 #CD7F32}
-@keyframes rowIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 tr.r1{border-left:3px solid #FFD700}
 tr.r2{border-left:3px solid #C0C0C0}
 tr.r3{border-left:3px solid #CD7F32}
