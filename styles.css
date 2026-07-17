@@ -167,7 +167,7 @@ html.light .rk-top{border-bottom-color:var(--bd)}
 .rk-top button{background:var(--el);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:500;cursor:pointer;color:var(--fg2);display:flex;align-items:center;gap:5px;transition:all .15s}
 .rk-top button:hover{border-color:var(--gld);color:var(--gld)}
 .rk-top button svg{width:14px;height:14px}
-.tw{overflow-x:hidden;padding-left:28px}
+.tw{overflow-x:hidden}
 table{width:100%;border-collapse:collapse}
 th{text-align:left;padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--fg3);border-bottom:1px solid rgba(255,255,255,.06)}
 html.light th{border-bottom-color:var(--bd)}
@@ -183,7 +183,7 @@ tr.rw.r2:hover{background-color:rgba(192,192,192,.12)}
 tr.rw.r3:hover{background-color:rgba(205,127,50,.12)}
 tr.rw:hover td:first-child{box-shadow:inset 3px 0 0 var(--gld)}
 tr.rw td{transition:transform .3s cubic-bezier(.4,0,.2,1)}
-tr.rw:hover td{transform:translateX(-28px)}
+tr.rw:hover td{transform:translateX(-14px)}
 tr.rw.r1:hover td:first-child{box-shadow:inset 3px 0 0 #FFD700}
 tr.rw.r2:hover td:first-child{box-shadow:inset 3px 0 0 #C0C0C0}
 tr.rw.r3:hover td:first-child{box-shadow:inset 3px 0 0 #CD7F32}
