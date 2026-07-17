@@ -167,7 +167,7 @@ html.light .rk-top{border-bottom-color:var(--bd)}
 .rk-top button{background:var(--el);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:500;cursor:pointer;color:var(--fg2);display:flex;align-items:center;gap:5px;transition:all .15s}
 .rk-top button:hover{border-color:var(--gld);color:var(--gld)}
 .rk-top button svg{width:14px;height:14px}
-.tw{overflow-x:hidden}
+.tw{overflow-x:hidden;padding-left:28px}
 table{width:100%;border-collapse:collapse}
 th{text-align:left;padding:10px 14px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--fg3);border-bottom:1px solid rgba(255,255,255,.06)}
 html.light th{border-bottom-color:var(--bd)}
