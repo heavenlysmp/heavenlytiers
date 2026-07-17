@@ -106,7 +106,7 @@ const LT2_OK=['HT1','LT1','HT2','LT2'];
 // First person to sign up with role=Owner if no Owner exists yet.
 
 // SVG fallback shape for broken mode icons
-const MODE_FB='<svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="20" height="20" rx="4"/><path d="M10 14h8M14 10v8"/></svg>';
+const MODE_FB='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M15 21l6-6"/></svg>';
 
 // Region → flag emoji (continents, since regions aren't single countries)
 const REGION_FLAG={NA:'🌎',EU:'🇪🇺',AS:'🌏',SA:'🌎',OC:'🌏',AF:'🌍'};
