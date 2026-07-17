@@ -182,8 +182,8 @@ tr.rw.r1:hover{background-color:rgba(255,215,0,.14)}
 tr.rw.r2:hover{background-color:rgba(192,192,192,.12)}
 tr.rw.r3:hover{background-color:rgba(205,127,50,.12)}
 tr.rw:hover td:first-child{box-shadow:inset 3px 0 0 var(--gld)}
-tr.rw td:not(:first-child){transition:transform .3s cubic-bezier(.4,0,.2,1)}
-tr.rw:hover td:not(:first-child){transform:translateX(-28px)}
+tr.rw td{transition:transform .3s cubic-bezier(.4,0,.2,1)}
+tr.rw:hover td{transform:translateX(-28px)}
 tr.rw.r1:hover td:first-child{box-shadow:inset 3px 0 0 #FFD700}
 tr.rw.r2:hover td:first-child{box-shadow:inset 3px 0 0 #C0C0C0}
 tr.rw.r3:hover td:first-child{box-shadow:inset 3px 0 0 #CD7F32}
