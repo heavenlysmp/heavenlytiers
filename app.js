@@ -858,20 +858,29 @@ function renderRank(){
 // mctiers-style leaderboard: 5 tier columns, each split into High/Low sub-groups.
 // Used for any single-mode tab (not Overall, which stays as the detailed row table).
 function renderModeTierCols(mode,list){
-  const cols=[1,2,3,4,5].map(n=>{
-    const htKey='HT'+n,ltKey='LT'+n;
-    const htP=list.filter(p=>p.tiers[mode]===htKey).sort((a,b)=>a.username.localeCompare(b.username));
-    const ltP=list.filter(p=>p.tiers[mode]===ltKey).sort((a,b)=>a.username.localeCompare(b.username));
-    const rows=(arr,cls)=>arr.length?arr.map(p=>`<div class="tc-col-row" onclick="showPD('${p.username.replace(/'/g,"\\'")}')"><span class="tbdg ${cls.toLowerCase()}" style="font-size:9px;margin-right:6px">${cls}</span>${esc(p.username)}</div>`).join(''):`<div class="tc-empty">—</div>`;
-    return `<div class="tc-col">
-      <div class="tc-col-h">${S.trophy} Tier ${n}</div>
-      <div class="tc-col-sub">High</div>
-      ${rows(htP,htKey)}
-      <div class="tc-col-sub">Low</div>
-      ${rows(ltP,ltKey)}
+  const order=['HT1','HT2','HT3','HT4','HT5','LT1','LT2','LT3','LT4','LT5'];
+  const cards=order.map(tk=>{
+    const players=list.filter(p=>p.tiers[mode]===tk).sort((a,b)=>a.username.localeCompare(b.username));
+    if(!players.length)return '';
+    const rows=players.map((p,i)=>{
+      const bodyUrl=getBodyRenderUrl(p);
+      const av=bodyUrl
+        ?`<img src="${esc(bodyUrl)}" alt="${esc(p.username)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="tc-prow-av-fb" style="display:none">${S.person}</div>`
+        :`<div class="tc-prow-av-fb">${S.person}</div>`;
+      return `<div class="tc-prow${i>=8?' tc-prow-more':''}" onclick="showPD('${p.username.replace(/'/g,"\\'")}')">
+        <div class="tc-prow-av">${av}</div>
+        <span class="tc-pname">${esc(p.username)}</span>
+        <svg class="tc-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+      </div>`;
+    }).join('');
+    const loadMore=players.length>8?`<button class="tc-loadmore" onclick="this.parentElement.querySelectorAll('.tc-prow-more').forEach(r=>r.classList.remove('tc-prow-more'));this.remove()">Load More \u2193</button>`:'';
+    return `<div class="tc-card">
+      <div class="tc-card-h">${S.trophy}<span>${tk}</span><span class="tc-count">${players.length}</span></div>
+      <div class="tc-card-body">${rows}</div>
+      ${loadMore}
     </div>`;
   }).join('');
-  return `<div class="tc-cols">${cols}</div>`;
+  return cards.trim()?`<div class="tc-board">${cards}</div>`:`<div class="em">${S.inbox}<p>No players have a tier in this mode yet.</p></div>`;
 }
 
 function showPD(un){
