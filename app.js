@@ -101,7 +101,13 @@ function saveModes(){lss('hm',MODES);lss('hmi',MODE_IC)}
 const TIERS=['HT1','HT2','HT3','HT4','HT5','LT1','LT2','LT3','LT4','LT5'];
 const TIER_PTS={HT1:60,LT1:45,HT2:30,LT2:20,HT3:10,LT3:6,HT4:4,LT4:3,HT5:2,LT5:1};
 const TIER_ORD={HT1:0,LT1:1,HT2:2,LT2:3,HT3:4,LT3:5,HT4:6,LT4:7,HT5:8,LT5:9};
-const LT2_OK=['HT1','LT1','HT2','LT2'];
+// "R" prefix = Retired — same tier, same points/rank position, just flagged inactive.
+// Alias every base tier's points/order onto its RHT#/RLT# retired form so nothing
+// elsewhere needs special-casing for points math or sort order.
+Object.keys(TIER_PTS).forEach(k=>{TIER_PTS['R'+k]=TIER_PTS[k];TIER_ORD['R'+k]=TIER_ORD[k];});
+const LT2_OK=['HT1','LT1','HT2','LT2']; // retired tiers deliberately excluded — Combat Master requires an active tier
+function isRetiredTier(t){return !!t&&t[0]==='R'&&t!=='R'}
+function baseTier(t){return isRetiredTier(t)?t.slice(1):t}
 // Owner seeding handled via setup flow — no hardcoded creds in source.
 // First person to sign up with role=Owner if no Owner exists yet.
 
@@ -111,26 +117,8 @@ const MODE_FB='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" strok
 // Region → flag emoji (continents, since regions aren't single countries)
 const REGION_FLAG={NA:'🌎',EU:'🇪🇺',AS:'🌏',SA:'🌎',OC:'🌏',AF:'🌍'};
 
-// Inline SVG icons for built-in game modes — no external image host needed, can't ever 404/hotlink-block.
-const MODE_SVG={
-  Axe:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21L17 10a3.5 3.5 0 000-5 3.5 3.5 0 00-5 0L1 16l2 2 8-8"/><path d="M15 6l3 3"/></svg>',
-  Sword:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M15 21l6-6"/></svg>',
-  Pot:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6M10 2v4.5L6 12v8a2 2 0 002 2h8a2 2 0 002-2v-8l-4-5.5V2"/><circle cx="12" cy="15" r="2.2" fill="currentColor" stroke="none"/></svg>',
-  NethPot:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6M10 2v4.5L6 12v8a2 2 0 002 2h8a2 2 0 002-2v-8l-4-5.5V2"/><path d="M12 12.5l1.2 2.2h2.3L13.8 16l.7 2.3L12 17l-2.5 1.3.7-2.3-1.7-1.3h2.3z" fill="currentColor" stroke="none"/></svg>',
-  UHC:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 1.5 1 2.8 0 4-1-1.2-1-2.5 0-4z" fill="currentColor" stroke="none"/><path d="M12 21c-4.4 0-8-3.1-8-7.5C4 9.6 8 8 12 8s8 1.6 8 5.5C20 17.9 16.4 21 12 21z"/></svg>',
-  Crystal:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 5-3 15H8L5 7l7-5z"/><path d="M9 7h6M8 9.5h8"/></svg>',
-  SMP:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1.5"/><path d="M4 9h16M9 4v16"/></svg>',
-  Mace:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3l7 7-9 9-7-7z"/><path d="M12 14L3 23"/><circle cx="14" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="9" r="1" fill="currentColor" stroke="none"/></svg>',
-  Lifesteal:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.7-10-9.3C.4 8.4 2 5 5.5 5c2 0 3.5 1.3 4.5 2.8C11 6.3 12.5 5 14.5 5 18 5 19.6 8.4 22 11.7 19.5 16.3 12 21 12 21z"/></svg>',
-  Spear:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21L15 9M13 3l4 4-2.5 2.5-4-4z"/></svg>',
-  'Spear-Mace':'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21L12 12M11 4l4 4-2 2-4-4z"/><path d="M15 15l6 6M17 13l4 4"/></svg>',
-  Overall:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 010-5H6M18 9h1.5a2.5 2.5 0 000-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0012 0V2z"/></svg>'
-};
-
-// Returns the icon markup for a mode: inline SVG for built-ins (never breaks/hotlink-blocks),
-// else falls back to the owner's custom icon URL (with a safe fallback glyph if that 404s).
+// Returns the icon markup for a mode: the owner's configured icon URL, with a safe fallback glyph if it 404s.
 function modeIconMarkup(modeName){
-  if(MODE_SVG[modeName])return MODE_SVG[modeName];
   const ic=MODE_IC[modeName];
   if(ic&&ic.u)return `<img src="${esc(ic.u)}" alt="${esc(modeName)}" onerror="this.style.display='none';this.nextElementSibling.style.display=''"/><span class="mode-fb-ico" style="display:none">${MODE_FB}</span>`;
   return `<span class="mode-fb-ico">${MODE_FB}</span>`;
@@ -761,35 +749,28 @@ function buildTabs(){
   tc.appendChild(ind);
 
   ['Overall',...MODES].forEach(m=>{
+    const ic=MODE_IC[m]||{u:''};
     const d=document.createElement('div');
     d.className='tab'+(m===actMode?' act':'');
     d.onclick=()=>{actMode=m;slideTabTo(d);renderRank()};
 
-    if(MODE_SVG[m]){
-      const wrap=document.createElement('span');
-      wrap.className='tab-svg';
-      wrap.innerHTML=MODE_SVG[m];
-      d.appendChild(wrap.firstChild);
-    }else{
-      const ic=MODE_IC[m]||{u:''};
-      // Build icon using DOM — avoids quote-escaping bugs in innerHTML onerror attributes
-      if(ic.u){
-        const img=document.createElement('img');
-        img.src=ic.u;
-        img.alt=m;
-        img.style.cssText='width:40px;height:40px;object-fit:contain;image-rendering:auto;flex-shrink:0';
-        img.onerror=function(){
-          const fb=document.createElement('span');
-          fb.innerHTML=MODE_FB;
-          this.parentNode.insertBefore(fb.firstChild,this);
-          this.remove();
-        };
-        d.appendChild(img);
-      }else{
+    // Build icon using DOM — avoids quote-escaping bugs in innerHTML onerror attributes
+    if(ic.u){
+      const img=document.createElement('img');
+      img.src=ic.u;
+      img.alt=m;
+      img.style.cssText='width:40px;height:40px;object-fit:contain;image-rendering:auto;flex-shrink:0';
+      img.onerror=function(){
         const fb=document.createElement('span');
         fb.innerHTML=MODE_FB;
-        d.appendChild(fb.firstChild);
-      }
+        this.parentNode.insertBefore(fb.firstChild,this);
+        this.remove();
+      };
+      d.appendChild(img);
+    }else{
+      const fb=document.createElement('span');
+      fb.innerHTML=MODE_FB;
+      d.appendChild(fb.firstChild);
     }
     d.appendChild(document.createTextNode('\u00A0'+m));
     tc.appendChild(d);
@@ -899,16 +880,19 @@ function renderRank(){
 function renderModeTierCols(mode,list){
   const order=['HT1','HT2','HT3','HT4','HT5','LT1','LT2','LT3','LT4','LT5'];
   const cards=order.map(tk=>{
-    const players=list.filter(p=>p.tiers[mode]===tk).sort((a,b)=>a.username.localeCompare(b.username));
+    // Group by base tier — a retired RHT1 counts as HT1's card, just visually flagged
+    const players=list.filter(p=>baseTier(p.tiers[mode])===tk).sort((a,b)=>a.username.localeCompare(b.username));
     if(!players.length)return '';
     const rows=players.map((p,i)=>{
+      const retired=isRetiredTier(p.tiers[mode]);
       const bodyUrl=getBodyRenderUrl(p);
       const av=bodyUrl
         ?`<img src="${esc(bodyUrl)}" alt="${esc(p.username)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="tc-prow-av-fb" style="display:none">${S.person}</div>`
         :`<div class="tc-prow-av-fb">${S.person}</div>`;
-      return `<div class="tc-prow${i>=8?' tc-prow-more':''}" onclick="showPD('${p.username.replace(/'/g,"\\'")}')">
+      return `<div class="tc-prow${i>=8?' tc-prow-more':''}${retired?' tc-prow-retired':''}" onclick="showPD('${p.username.replace(/'/g,"\\'")}')">
         <div class="tc-prow-av">${av}</div>
         <span class="tc-pname">${esc(p.username)}</span>
+        ${retired?'<span class="tc-retired-tag">Retired</span>':''}
         <svg class="tc-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
       </div>`;
     }).join('');
@@ -1213,6 +1197,7 @@ function buildAddEdit(){
     <div class="pf"><label>Region</label><select id="apR"><option>NA</option><option>EU</option><option>AS</option><option>SA</option><option>OC</option><option>AF</option></select></div>
     <div class="pf"><label>Game Modes (select multiple)</label><div class="modes-grid" id="modesGrid">${modesHtml}</div></div>
     <div class="pf"><label>Tier</label><select id="apTr">${TIERS.map(t=>'<option>'+t+'</option>').join('')}</select></div>
+    <div class="pf"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="apRetired" style="width:16px;height:16px;accent-color:var(--gld)"/> Mark as Retired <span style="color:var(--fg3);font-size:11px;font-weight:400">(same rank/points, flagged inactive)</span></label></div>
 
     <hr style="border-color:var(--bd);margin:18px 0"/>
     <h3 style="font-weight:700;font-size:14px;margin-bottom:10px">Socials & Details <span style="color:var(--fg3);font-size:11px;font-weight:400">(optional — shown on their profile)</span></h3>
@@ -1288,7 +1273,7 @@ function addEdit(){
   const c=gC();if(!c||(c.role!=='Owner'&&c.role!=='Admin'))return toast('Not authorized','error');
   const un=document.getElementById('apU').value.trim();
   const rg=document.getElementById('apR').value;
-  const tr=document.getElementById('apTr').value;
+  const tr=(document.getElementById('apRetired').checked?'R':'')+document.getElementById('apTr').value;
   const did=document.getElementById('apDid').value.trim();
   const stEl=document.getElementById('psAdd');
   const st=stEl?stEl.dataset.skinType||'java':'java';
@@ -1518,14 +1503,12 @@ function renderModeMgmt(){
   const cards=MODES.map((m,i)=>{
     const ic=MODE_IC[m];
     const hasImg=ic&&ic.u;
-    const builtIn=MODE_SVG[m];
     return `<div class="mm-card" data-mode="${esc(m)}">
       ${hasImg?`<img src="${ic.u}" alt="${esc(m)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="mm-noimg" style="display:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`
-        :builtIn?`<div class="mm-noimg" style="display:flex">${builtIn}</div>`
         :`<div class="mm-noimg"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`}
       <div class="mm-info">
         <div class="mm-name">${esc(m)}</div>
-        ${hasImg?`<div class="mm-url">${esc(ic.u)}</div>`:builtIn?'<div class="mm-url" style="color:var(--fg3);font-style:italic">Built-in icon (no URL needed)</div>':'<div class="mm-url" style="color:var(--fg3);font-style:italic">No icon</div>'}
+        ${hasImg?`<div class="mm-url">${esc(ic.u)}</div>`:'<div class="mm-url" style="color:var(--fg3);font-style:italic">No icon</div>'}
       </div>
       <div class="mm-acts">
         <button onclick="renameMode('${m.replace(/'/g,"\\'")}')" title="Rename">${S.edit}</button>
@@ -1850,6 +1833,8 @@ function buildUI(){
     <p style="font-size:13px;color:var(--fg2);margin-bottom:12px">The Overall tab shows each player's total points summed across all ${MODES.length} game modes. It is not a game mode itself — it is auto-calculated.</p>
     <h3 style="font-weight:700;font-size:14px;margin-bottom:6px">Combat Master Requirement</h3>
     <p style="font-size:13px;color:var(--fg2)">A player must have <strong>LT2 or higher</strong> in every single one of the ${MODES.length} game modes to earn Combat Master. If they have 250+ points but haven't met this condition, they remain at Combat Ace with a warning listing the missing modes.</p>
+    <h3 style="font-weight:700;font-size:14px;margin:16px 0 6px">Retired Tiers</h3>
+    <p style="font-size:13px;color:var(--fg2)">A tier prefixed with <strong>R</strong> (e.g. RHT1) means that tier is <strong>retired</strong> — the player earned it but it's flagged inactive. It still counts the same points and rank position as the base tier, but doesn't count toward the Combat Master LT2 requirement above, and is shown muted/dashed throughout the site.</p>
     <div style="text-align:right;margin-top:18px"><button class="btn-o" onclick="closeMs()">Close</button></div>`;
 
   // API content
