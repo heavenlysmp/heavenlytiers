@@ -3,17 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<link rel="icon" type="image/png" href="https://iili.io/BpWuSTb.png"/>
 <title>Heavenly Tiers</title>
- <link rel="icon" type="image/png" href="https://iili.io/BpWuSTb.png"/>
-  <!-- Discord Embed Tags -->
-  <meta property="og:site_name" content="Heavenly Tiers">
-  <meta property="og:title" content="Heavenly Tiers">
-  <meta property="og:description" content="Check out Heavenly Tiers!">
-  <meta property="og:url" content="https://heavenlytiers.vercel.app">
-  <meta property="og:image" content="https://iili.io/BpWuSTb.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="theme-color" content="#FFD700">
-  
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
@@ -45,6 +36,7 @@
     <div class="sr-w">
       <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       <input class="srch" type="text" id="sBar" placeholder="Search players..." oninput="onSearch()"/>
+      <button class="srch-clear" id="srchClear" onclick="document.getElementById('sBar').value='';onSearch();this.style.display='none';document.getElementById('sBar').focus()" title="Clear search"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
     <div id="authA"></div>
     <button class="thb" id="thmBtn" onclick="toggleTheme()"></button>
@@ -68,6 +60,7 @@
     <h1 class="hero-t" id="heroT">Heavenly Tiers</h1>
     <p class="hero-sub" id="heroS">Rise Through the Ranks</p>
     <button class="hero-cta" onclick="showPage('rankings')">View Tier List <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    <a class="hero-cta-o" href="https://youtu.be/e71q0BNhHss" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Watch Trailer</a>
   </section>
   <div class="stats-r" id="statsR">
     <div class="st-i"><span class="sn" data-t="players">0</span><span class="sl">Players Ranked</span></div>
