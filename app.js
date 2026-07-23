@@ -454,6 +454,8 @@ function doDeleteAccount(){
 // ===== SEARCH (150ms debounce) =====
 let sDeb=null;
 function onSearch(){
+  const clr=document.getElementById('srchClear');
+  if(clr)clr.style.display=document.getElementById('sBar').value?'':'none';
   clearTimeout(sDeb);
   sDeb=setTimeout(()=>{if(curPg==='rankings')renderRank()},150);
 }
@@ -890,6 +892,7 @@ function renderModeTierCols(mode,list){
         ?`<img src="${esc(bodyUrl)}" alt="${esc(p.username)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="tc-prow-av-fb" style="display:none">${S.person}</div>`
         :`<div class="tc-prow-av-fb">${S.person}</div>`;
       return `<div class="tc-prow${i>=8?' tc-prow-more':''}${retired?' tc-prow-retired':''}" onclick="showPD('${p.username.replace(/'/g,"\\'")}')">
+        <span class="tc-region tc-region-${(p.region||'na').toLowerCase()}">${esc(p.region||'')}</span>
         <div class="tc-prow-av">${av}</div>
         <span class="tc-pname">${esc(p.username)}</span>
         ${retired?'<span class="tc-retired-tag">Retired</span>':''}
@@ -897,7 +900,7 @@ function renderModeTierCols(mode,list){
       </div>`;
     }).join('');
     const loadMore=players.length>8?`<button class="tc-loadmore" onclick="this.parentElement.querySelectorAll('.tc-prow-more').forEach(r=>r.classList.remove('tc-prow-more'));this.remove()">Load More \u2193</button>`:'';
-    return `<div class="tc-card">
+    return `<div class="tc-card tc-card-${tk.toLowerCase()}">
       <div class="tc-card-h">${S.trophy}<span>${tk}</span><span class="tc-count">${players.length}</span></div>
       <div class="tc-card-body">${rows}</div>
       ${loadMore}
