@@ -555,10 +555,13 @@ async function fetchBedrockXUID(gamertag){
 
 // Draw a flat 2D front-facing character from a skin texture PNG onto a canvas.
 // Layout follows the standard Minecraft 64x64 1.8+ skin UV map.
-function drawSkin2DFront(canvas,img,scale){
+function drawSkin2DFront(canvas,img,scale,bust){
   const s=scale||3;
-  // Character grid: 16 wide × 32 tall skin pixels → canvas size
-  canvas.width=16*s; canvas.height=32*s;
+  // Character grid: 16 wide × 32 tall skin pixels → canvas size.
+  // Bust mode just shows a shorter canvas (head+shoulders) — canvas clips
+  // anything drawn past its own height automatically, so the exact same
+  // draw calls below give a bust crop for free, no UV changes needed.
+  canvas.width=16*s; canvas.height=(bust?16:32)*s;
   const ctx=canvas.getContext('2d');
   ctx.imageSmoothingEnabled=false;
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -580,10 +583,12 @@ function drawSkin2DFront(canvas,img,scale){
   d(44, 20, 4,12,  0,  8);
   // Left arm front     src(36,52,4,12)  → char pos (12,8)  [1.8+ lower half]
   d(36, 52, 4,12, 12,  8);
-  // Right leg front    src(4,20,4,12)   → char pos (4,20)
-  d( 4, 20, 4,12,  4, 20);
-  // Left leg front     src(20,52,4,12)  → char pos (8,20)  [1.8+ lower half]
-  d(20, 52, 4,12,  8, 20);
+  if(!bust){
+    // Right leg front    src(4,20,4,12)   → char pos (4,20)
+    d( 4, 20, 4,12,  4, 20);
+    // Left leg front     src(20,52,4,12)  → char pos (8,20)  [1.8+ lower half]
+    d(20, 52, 4,12,  8, 20);
+  }
 
   // ── Layer 2 / Second Layer (outer overlay) ────────────────
   // Hat / head overlay src(40,8,8,8)    → char pos (4,0)
@@ -594,29 +599,33 @@ function drawSkin2DFront(canvas,img,scale){
   d(44, 36, 4,12,  0,  8);
   // Left arm overlay   src(52,52,4,12)  → char pos (12,8)
   d(52, 52, 4,12, 12,  8);
-  // Right leg overlay  src(4,36,4,12)   → char pos (4,20)
-  d( 4, 36, 4,12,  4, 20);
-  // Left leg overlay   src(4,52,4,12)   → char pos (8,20)
-  d( 4, 52, 4,12,  8, 20);
+  if(!bust){
+    // Right leg overlay  src(4,36,4,12)   → char pos (4,20)
+    d( 4, 36, 4,12,  4, 20);
+    // Left leg overlay   src(4,52,4,12)   → char pos (8,20)
+    d( 4, 52, 4,12,  8, 20);
+  }
 
   // ── Subtle drop shadow to suggest depth ───────────────────
   ctx.save();
   ctx.globalCompositeOperation='multiply';
   ctx.globalAlpha=0.18;
   ctx.fillStyle='#000';
-  // Right edge shadow on torso
-  ctx.fillRect(11*s,8*s,1*s,12*s);
-  // Bottom shadow on legs
-  ctx.fillRect(4*s,31*s,8*s,1*s);
+  // Right edge shadow on torso/shoulder
+  ctx.fillRect(11*s,8*s,1*s,(bust?8:12)*s);
+  if(!bust){
+    // Bottom shadow on legs (full-body mode only)
+    ctx.fillRect(4*s,31*s,8*s,1*s);
+  }
   ctx.restore();
 }
 
 // Render a raw skin PNG URL onto a canvas element using the 2D flat method
-function renderRawCanvas(canvas,skinUrl,scale){
+function renderRawCanvas(canvas,skinUrl,scale,bust){
   if(!skinUrl)return;
   const img=new Image();
   img.crossOrigin='anonymous';
-  img.onload=()=>drawSkin2DFront(canvas,img,scale||3);
+  img.onload=()=>drawSkin2DFront(canvas,img,scale||3,bust);
   img.onerror=()=>{/* leave blank */};
   img.src=skinUrl;
 }
@@ -627,7 +636,7 @@ function processTableSkinCanvases(){
   document.querySelectorAll('canvas[data-skin-url]').forEach(c=>{
     if(c.dataset.rendered)return;
     c.dataset.rendered='1';
-    renderRawCanvas(c,c.dataset.skinUrl,3);
+    renderRawCanvas(c,c.dataset.skinUrl,5,true);
   });
 }
 
@@ -702,7 +711,7 @@ async function processBedrockCanvases(){
           img.alt=un||'';
           img.onerror=function(){
             // VZGE failed — fall back to the flat 2D texture render
-            renderRawCanvas(c,'https://textures.minecraft.net/texture/'+d.texture_id,3);
+            renderRawCanvas(c,'https://textures.minecraft.net/texture/'+d.texture_id,5,true);
             c.style.display='';
           };
           c.replaceWith(img);
@@ -926,6 +935,12 @@ function fireConfetti(){
     wrap.appendChild(p);
   }
   setTimeout(()=>wrap.remove(),3200);
+}
+
+function goRandomPlayer(){
+  if(!window.players.length)return toast('No players yet','error');
+  const p=window.players[Math.floor(Math.random()*window.players.length)];
+  showPD(p.username);
 }
 
 function showPD(un){
@@ -1811,6 +1826,7 @@ function buildUI(){
 
   // Info button
   document.getElementById('infoBtn').innerHTML=S.info+' Information';
+  document.getElementById('randBtn').innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg> Random';
 
   // Info modal content
   document.getElementById('infC').innerHTML=`<div class="mhandle"></div>
