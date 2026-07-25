@@ -1084,107 +1084,62 @@ function showPD(un){
   if(rank===1)fireConfetti();
 }
 
-// ===== TESTERS (Lanyard REST + WebSocket) =====
-let sseSource=null;
-function getTesters(){return lsg('ht',['1503408628261191755'])}
+// ===== TESTERS (Minecraft profiles — bust render by skin type, no Discord needed) =====
+function getTesters(){return lsg('ht',[])}
+function isTester(username){
+  if(!username)return false;
+  const list=getTesters();
+  return list.some(t=>t.toLowerCase()===username.toLowerCase());
+}
 
-// Build a tester card from bot API data
-function buildTesterCard(tester,index){
-  const statMap={
-    online: {wrap:'st-on',  dot:'sd-on', label:'Online'},
-    idle:   {wrap:'st-idle',dot:'sd-id', label:'Idle'},
-    dnd:    {wrap:'st-dnd', dot:'sd-dn', label:'Do Not Disturb'},
-    offline:{wrap:'st-offline',dot:'sd-of',label:'Offline'},
-  };
-  const st=statMap[tester.status]||statMap.offline;
-  const actLabel=tester.customStatus||tester.activity||'No activity';
+// Builds one tester card. If the username matches a ranked player, shows their real
+// bust render + title + points. If not (a tester who isn't ranked yet), shows a
+// silhouette placeholder — still lists them, just without tier data to pull from.
+function buildTesterCard(username,index){
+  const p=window.players.find(x=>x.username.toLowerCase()===username.toLowerCase());
   const nc=document.createElement('div');
-  nc.className=`crd tc-card tc-${tester.status==='dnd'?'dnd':tester.status||'offline'}`;
-  nc.dataset.tid=tester.id;
-  nc.style.animation=`pgIn .3s ease ${index*90}ms both`;
-  const avatarHtml=tester.avatar
-    ?`<img src="${esc(tester.avatar)}" alt="${esc(tester.username)}" width="60" height="60" onerror="this.outerHTML='<div class=\\'tc-af\\'><svg width=\\'28\\' height=\\'28\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><circle cx=\\'12\\' cy=\\'8\\' r=\\'4\\'/><path d=\\'M4 20c0-4 4-7 8-7s8 3 8 7\\'/></svg></div>'"/>`
-    :`<div class="tc-af"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg></div>`;
+  nc.className='crd tc-card';
+  nc.style.cssText='padding:20px 18px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;cursor:'+(p?'pointer':'default');
+  nc.style.animation=`pgIn .3s ease ${index*70}ms both`;
+  if(p)nc.onclick=()=>showPD(p.username);
+
+  let avatarHtml;
+  if(p){
+    const bodyUrl=getBodyRenderUrl(p);
+    avatarHtml=bodyUrl
+      ?`<img src="${esc(bodyUrl)}" alt="${esc(username)}" style="width:64px;height:64px;object-fit:cover;border-radius:12px;background:var(--el)" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="tc-prow-av-fb" style="display:none;width:64px;height:64px">${S.person}</div>`
+      :`<div class="tc-prow-av-fb" style="width:64px;height:64px">${S.person}</div>`;
+  }else{
+    avatarHtml=`<div class="tc-prow-av-fb" style="width:64px;height:64px">${S.person}</div>`;
+  }
+
+  const title=p?getTitle(p):null;
+  const pts=p?getPoints(p):0;
+
   nc.innerHTML=`
-    <div class="tc-av-wrap ${st.wrap}">
-      ${avatarHtml}
-      <span class="tc-dot ${st.dot}"></span>
+    ${avatarHtml}
+    <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;justify-content:center">
+      ${esc(username)}
+      <span class="tc-badge-tester"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 3h6M10 3v5.17a2 2 0 01-.59 1.42L4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4l-5.41-5.41A2 2 0 0114 8.17V3"/></svg> Tester</span>
     </div>
-    <div class="tc-body">
-      <div class="tc-name">
-        ${esc(tester.displayName||tester.username)}
-        <span class="tc-badge-tester"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 3h6M10 3v5.17a2 2 0 01-.59 1.42L4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4l-5.41-5.41A2 2 0 0114 8.17V3"/></svg> Tester</span>
-      </div>
-      <div class="tc-status-row ${st.wrap}">
-        <span class="tc-dot ${st.dot}" style="position:static;width:10px;height:10px;border:none"></span>
-        ${st.label}
-      </div>
-      <div class="tc-activity">${esc(actLabel)}</div>
-    </div>`;
+    ${p?`<div>${titlePill(title.name)}</div><div style="font-size:12px;color:var(--fg3)">${pts} points</div>`
+       :`<div style="font-size:11px;color:var(--fg3);font-style:italic">Not ranked yet</div>`}`;
   return nc;
 }
 
-function renderTesters(testers){
+function renderTesters(){
   const el=document.getElementById('testC');
   const countEl=document.getElementById('tsCount');
   if(!el)return;
+  const ids=getTesters();
   el.innerHTML='';
-  if(!testers.length){
-    el.innerHTML=`<div style="padding:32px;text-align:center;color:var(--fg3)">No testers found. Run <strong>/set-tester-role</strong> in Discord first.</div>`;
+  if(!ids.length){
+    el.innerHTML=`<div style="padding:32px;text-align:center;color:var(--fg3)">No testers added yet. Add some from the Owner Panel.</div>`;
+    if(countEl)countEl.textContent='';
     return;
   }
-  const order={online:0,idle:1,dnd:2,offline:3};
-  const sorted=[...testers].sort((a,b)=>(order[a.status]??3)-(order[b.status]??3));
-  sorted.forEach((t,i)=>el.appendChild(buildTesterCard(t,i)));
-  if(countEl){
-    const online=testers.filter(t=>t.status==='online').length;
-    countEl.innerHTML=`${testers.length} tester${testers.length!==1?'s':''} &middot; <span style="color:#23d160">${online} online</span>`;
-  }
-}
-
-function patchTester(updated){
-  const el=document.getElementById('testC');
-  if(!el)return;
-  const card=el.querySelector(`[data-tid="${updated.id}"]`);
-  const allCards=[...el.querySelectorAll('[data-tid]')];
-  const index=allCards.findIndex(c=>c.dataset.tid===updated.id);
-  const nc=buildTesterCard(updated,index>=0?index:0);
-  if(card){card.style.opacity='0.4';setTimeout(()=>card.replaceWith(nc),150);}
-  else el.appendChild(nc);
-}
-
-function fetchTesters(){
-  if(sseSource){sseSource.close();sseSource=null;}
-  const el=document.getElementById('testC');
-  if(el)el.innerHTML=`
-    <div class="crd tc-card" style="animation:pgIn .3s ease both">
-      <div class="sk" style="width:60px;height:60px;border-radius:50%;flex-shrink:0"></div>
-      <div style="flex:1">
-        <div class="sk" style="width:130px;height:15px;margin-bottom:10px"></div>
-        <div class="sk" style="width:80px;height:11px;margin-bottom:8px"></div>
-        <div class="sk" style="width:100px;height:11px"></div>
-      </div>
-    </div>`;
-
-  // Connect via Server-Sent Events for live updates
-  sseSource=new EventSource(`${API_BASE}/api/testers/live`);
-
-  sseSource.onmessage=(e)=>{
-    const msg=JSON.parse(e.data);
-    if(msg.type==='init'||msg.type==='sync')renderTesters(msg.testers);
-    if(msg.type==='presence')patchTester(msg.tester);
-  };
-
-  // Fallback to plain HTTP if SSE fails
-  sseSource.onerror=()=>{
-    sseSource.close();sseSource=null;
-    fetch(`${API_BASE}/api/testers`)
-      .then(r=>r.json())
-      .then(testers=>renderTesters(testers))
-      .catch(()=>{
-        if(el)el.innerHTML=`<div style="padding:32px;text-align:center;color:#ff3860">⚠️ Could not reach the API server.<br><span style="font-size:12px;color:var(--fg3)">Make sure Termux is running with ./start.sh</span></div>`;
-      });
-  };
+  ids.forEach((un,i)=>el.appendChild(buildTesterCard(un,i)));
+  if(countEl)countEl.textContent=`${ids.length} tester${ids.length!==1?'s':''}`;
 }
 
 // ===== PANEL =====
@@ -1541,48 +1496,53 @@ async function doTransferOwnership(uid){
 function renderTesterMgmt(){
   const ids=getTesters();
   const el=document.getElementById('psTst');
-  let cards=ids.map(id=>{
-    const cached=testerCache[id];
+  let cards=ids.map(un=>{
+    const p=window.players.find(x=>x.username.toLowerCase()===un.toLowerCase());
+    const bodyUrl=p?getBodyRenderUrl(p):null;
     return `<div class="tm-card" style="margin-bottom:8px">
-      ${cached&&cached.avatar?`<img src="https://cdn.discordapp.com/avatars/${cached.uid}/${cached.avatar}.png?size=64" onerror="this.style.display='none'"/>`:''}
+      ${bodyUrl?`<img src="${esc(bodyUrl)}" style="width:32px;height:32px;border-radius:8px;object-fit:cover" onerror="this.style.display='none'"/>`:''}
       <div style="flex:1">
-        ${cached?`<div class="tm-name">${esc(cached.username)}</div>`:''}
-        <div class="tm-id">${id}</div>
+        <div class="tm-name">${esc(un)}</div>
+        <div class="tm-id">${p?'Ranked player':'Not ranked yet'}</div>
       </div>
-      <button class="del" onclick="rmTester('${id}')">${S.trash}</button>
+      <button class="del" onclick="rmTester('${un.replace(/'/g,"\\'")}')">${S.trash}</button>
     </div>`;
   }).join('');
 
   el.innerHTML=`<h2 style="font-weight:700;font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:8px">${S.people} Manage Testers</h2>
+    <p style="font-size:12px;color:var(--fg3);margin-bottom:14px">Shows on the public Testers page with their Minecraft bust render, and tags them as a Tester on their tier profile.</p>
     ${cards}
     <div class="tm-add">
-      <input type="text" id="newTstId" placeholder="Discord User ID"/>
+      <input type="text" id="newTstId" placeholder="Minecraft Username"/>
       <button onclick="addTester()">${S.plus}</button>
     </div>`;
 }
 
 function addTester(){
-  const id=document.getElementById('newTstId').value.trim();
-  if(!id||!/^\d+$/.test(id))return toast('Enter a valid Discord User ID (digits only)','error');
+  const un=document.getElementById('newTstId').value.trim();
+  if(!un)return toast('Enter a Minecraft username','error');
   let ids=getTesters();
-  if(ids.includes(id))return toast('Tester already exists','error');
-  ids.push(id);lss('ht',ids);
-  const c=gC();logA(`Added tester ${id} by ${c?c.email:'unknown'}`);
+  if(ids.some(x=>x.toLowerCase()===un.toLowerCase()))return toast('Tester already exists','error');
+  ids.push(un);lss('ht',ids);
+  const c=gC();logA(`Added tester ${un} by ${c?c.username||c.email:'unknown'}`);
   toast('Tester added!','success');
   renderTesterMgmt();
+  if(curPg==='testers')renderTesters();
+  if(curPg==='rankings')renderRank();
 }
 
-function rmTester(id){
+function rmTester(un){
   let ids=getTesters();
-  if(ids.length<=1)return toast('Must have at least one tester','error');
   document.getElementById('cfmH').innerHTML=S.warn+' Remove Tester';
-  document.getElementById('cfmMsg').textContent=`Remove tester ID ${id}?`;
+  document.getElementById('cfmMsg').textContent=`Remove "${un}" from testers?`;
   const y=document.getElementById('cfmY');
   y.textContent='Yes, Remove';
   y.onclick=()=>{
-    ids=ids.filter(x=>x!==id);lss('ht',ids);
-    const c=gC();logA(`Removed tester ${id} by ${c?c.email:'unknown'}`);
+    ids=ids.filter(x=>x.toLowerCase()!==un.toLowerCase());lss('ht',ids);
+    const c=gC();logA(`Removed tester ${un} by ${c?c.username||c.email:'unknown'}`);
     toast('Tester removed','success');closeMs();renderTesterMgmt();
+    if(curPg==='testers')renderTesters();
+    if(curPg==='rankings')renderRank();
   };
   openM('cfmM');
 }
