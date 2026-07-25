@@ -188,33 +188,23 @@ function getProgress(pts){
 // ===== AUTH =====
 // gU reads localStorage directly — works before cloud-ready, stays in sync because
 // sU writes to both localStorage (via setCloudValue) AND Firestore.
-function gU(){
-  // prefer cloudStore if Firebase has loaded, else localStorage
-  if(window.getCloudValue&&window.cloudStore&&window.cloudStore['hu']!==undefined)
-    return window.cloudStore['hu']||[];
-  return _lsGet('hu',[]);
+// ===== REAL AUTH: session + roles cache =====
+// _session is kept in sync by the fbOnAuthChange listener at the bottom of this file.
+// gC() stays synchronous (matching how the rest of the codebase already calls it)
+// by reading this in-memory cache rather than hitting Firestore on every call.
+let _session=null;
+function gC(){return _session}
+
+// _rolesCache holds every user's role doc for the admin panel — refreshed
+// explicitly (refreshRolesCache) rather than on every gU() call, since that's
+// now a real async Firestore query instead of a free localStorage read.
+let _rolesCache=[];
+function gU(){return _rolesCache}
+async function refreshRolesCache(){
+  try{ _rolesCache = await window.getAllRoles(); }
+  catch(e){ console.error('Failed to load roles',e); }
+  return _rolesCache;
 }
-function sU(u){
-  // write to localStorage immediately so next gU() call sees it even before cloud-ready
-  try{localStorage.setItem('hu',JSON.stringify(u))}catch(e){}
-  lss('hu',u); // also writes to Firestore via setCloudValue
-}
-function gC(){
-  try{
-    const cached=JSON.parse(localStorage.getItem('hcu'));
-    if(!cached)return null;
-    // Role can change server-side (promote/demote) after this session snapshot was cached —
-    // always resolve the live role from the authoritative user list so badges/permissions
-    // never show a stale role like "Member" after being promoted to Admin.
-    const live=gU().find(x=>x.email===cached.email);
-    if(live&&live.role!==cached.role){
-      cached.role=live.role;
-      sC(cached); // keep the cache in sync so subsequent reads are cheap and consistent
-    }
-    return cached;
-  }catch(e){return null}
-}
-function sC(u){localStorage.setItem('hcu',JSON.stringify(u))}
 
 // Seed owner
 // No auto-seed. First sign-up becomes Owner if none exists (see doSign).
@@ -347,20 +337,26 @@ function upAuth(){
   }
 }
 
-let _pendingOwnerLogin=null;
-function doLogin(){
+let _pendingOwnerLogin=null; // holds {uid,email,role,...} while the PIN modal is open
+async function doLogin(){
   const e=document.getElementById('lE').value.trim().toLowerCase();
   const p=document.getElementById('lP').value;
   if(!e||!p)return toast('Fill in all fields','error');
-  const us=gU(),u=us.find(x=>x.email===e&&x.password===btoa(p));
-  if(!u)return toast('Invalid credentials','error');
+  let fbUser;
+  try{
+    fbUser=await window.fbSignIn(e,p);
+  }catch(err){
+    return toast(friendlyAuthError(err),'error');
+  }
+  const role=await window.getRoleDoc(fbUser.uid);
+  const u={uid:fbUser.uid,email:fbUser.email,username:role?role.username:fbUser.email.split('@')[0],role:role?role.role:'Member',pin:role?role.pin:undefined};
   if(u.role==='Owner'){
     _pendingOwnerLogin=u;
     closeMs();
     openOwnerPinStep();
     return;
   }
-  sC(u);closeMs();upAuth();toast('Logged in as '+u.role,'success');
+  _session=u;closeMs();upAuth();toast('Logged in as '+u.role,'success');
 }
 function openOwnerPinStep(){
   const u=_pendingOwnerLogin;if(!u)return;
@@ -377,43 +373,55 @@ function openOwnerPinStep(){
   }
   openM('ownerPinM');
 }
-function submitOwnerPin(){
+async function submitOwnerPin(){
   const u=_pendingOwnerLogin;if(!u)return;
   const val=document.getElementById('opPinInput').value.replace(/\D/g,'').slice(0,4);
   if(val.length!==4)return toast('PIN must be exactly 4 digits','error');
   if(u.pin){
     if(val!==u.pin)return toast('Incorrect PIN','error');
-    closeMs();sC(u);upAuth();toast('Logged in as Owner','success');
+    _ownerPinVerifiedThisSession=true;
+    closeMs();_session=u;upAuth();toast('Logged in as Owner','success');
     _pendingOwnerLogin=null;
   }else{
     const conf=document.getElementById('opPinConfirm').value.replace(/\D/g,'').slice(0,4);
     if(val!==conf)return toast('PINs do not match','error');
-    let us=gU();
-    const idx=us.findIndex(x=>x.email===u.email);
-    if(idx>-1){us[idx].pin=val;sU(us);u.pin=val;}
-    closeMs();sC(u);upAuth();toast('Owner PIN set. Logged in as Owner','success');
+    try{ await window.setRoleDoc(u.uid,{pin:val}); }catch(err){ return toast('Could not save PIN: '+err.message,'error'); }
+    u.pin=val;
+    _ownerPinVerifiedThisSession=true;
+    closeMs();_session=u;upAuth();toast('Owner PIN set. Logged in as Owner','success');
     _pendingOwnerLogin=null;
   }
 }
 function cancelOwnerPin(){
   _pendingOwnerLogin=null;
+  window.fbSignOut(); // they authenticated but bailed on the PIN step — don't leave a half-open session
   closeMs();
 }
-function doSign(){
+async function doSign(){
   const n=document.getElementById('sN').value.trim();
   const e=document.getElementById('sE').value.trim().toLowerCase();
   const p=document.getElementById('sP').value;
   const p2=document.getElementById('sP2').value;
   if(!n||!e||!p)return toast('Fill in all fields','error');
   if(p!==p2)return toast('Passwords do not match','error');
-  if(p.length<4)return toast('Password too short (min 4 chars)','error');
-  let us=gU();if(us.find(x=>x.email===e))return toast('Email already registered','error');
-  const r=us.length===0?'Owner':'Member'; // first signup = Owner
-  const nu={email:e,username:n,password:btoa(p),role:r};
-  us.push(nu);sU(us);sC(nu);closeMs();upAuth();toast('Account created! Welcome, '+n,'success');
+  if(p.length<6)return toast('Password too short (min 6 chars — Firebase requirement)','error');
+  let fbUser;
+  try{
+    fbUser=await window.fbSignUp(e,p);
+  }catch(err){
+    return toast(friendlyAuthError(err),'error');
+  }
+  const existing=await refreshRolesCache();
+  const role=existing.length<=1?'Owner':'Member'; // we're already in the list after signup, so <=1 means "just us"
+  const roleData={username:n,role,email:fbUser.email};
+  try{ await window.setRoleDoc(fbUser.uid,roleData); }catch(err){ return toast('Account created but role setup failed: '+err.message,'error'); }
+  await refreshRolesCache();
+  _session={uid:fbUser.uid,email:fbUser.email,username:n,role};
+  closeMs();upAuth();toast('Account created! Welcome, '+n,'success');
 }
-function doOut(){
-  localStorage.removeItem('hcu');
+async function doOut(){
+  await window.fbSignOut();
+  _session=null;
   upAuth();
   showPage('home');
   toast('Logged out','info');
@@ -436,19 +444,35 @@ function checkDelAcctInput(){
   btn.style.opacity=match?'1':'.5';
   btn.style.cursor=match?'pointer':'not-allowed';
 }
-function doDeleteAccount(){
+async function doDeleteAccount(){
   const c=gC();if(!c)return;
   if(document.getElementById('delAcctInput').value!==(c.username||c.email))return;
   if(c.role==='Owner')return toast('The Owner account cannot be self-deleted — transfer ownership first','error');
-  let us=gU();
-  us=us.filter(x=>x.email!==c.email);
-  sU(us);
+  try{
+    await window.deleteRoleDoc(c.uid);
+    await window.fbAuth.currentUser.delete(); // removes the actual login credential, not just the role
+  }catch(err){
+    if(err.code==='auth/requires-recent-login')
+      return toast('For security, please log out and back in, then try deleting again','error');
+    return toast('Delete failed: '+err.message,'error');
+  }
   logA(`${c.username||c.email} deleted their own account`);
-  localStorage.removeItem('hcu');
+  _session=null;
   closeMs();
   upAuth();
   showPage('home');
   toast('Account deleted','success');
+}
+
+// Turns Firebase's technical auth error codes into plain-language messages.
+function friendlyAuthError(err){
+  const code=err&&err.code||'';
+  if(code==='auth/email-already-in-use')return 'That email is already registered — try logging in instead.';
+  if(code==='auth/invalid-email')return 'That email address looks invalid.';
+  if(code==='auth/weak-password')return 'Password is too weak (min 6 characters).';
+  if(code==='auth/user-not-found'||code==='auth/wrong-password'||code==='auth/invalid-credential')return 'Invalid email or password.';
+  if(code==='auth/too-many-requests')return 'Too many attempts — please wait a bit and try again.';
+  return err&&err.message||'Something went wrong.';
 }
 
 // ===== SEARCH (150ms debounce) =====
@@ -1117,7 +1141,7 @@ function fetchTesters(){
 }
 
 // ===== PANEL =====
-function initPanel(){
+async function initPanel(){
   const c=gC();
   const den=document.getElementById('pDen');
   const con=document.getElementById('pCon');
@@ -1127,6 +1151,7 @@ function initPanel(){
     con.style.display='none';return;
   }
   den.style.display='none';con.style.display='';
+  if(c.role==='Owner')await refreshRolesCache(); // Admins can't read the roles collection — see Firestore rules
   const isOw=c.role==='Owner';
   buildPanelTabs(isOw);
   buildSettings();
@@ -1157,7 +1182,7 @@ function sPT(id){
   if(id==='psLog')renderLogL();
   if(id==='psTst')renderTesterMgmt();
   if(id==='psMod')renderModeMgmt();
-  if(id==='psAdm')buildAdminSec();
+  if(id==='psAdm')refreshRolesCache().then(buildAdminSec);
 }
 
 function buildSettings(){
@@ -1187,7 +1212,7 @@ function buildSettings(){
     <hr style="border-color:var(--bd);margin:22px 0"/>
     <h3 style="font-weight:700;font-size:15px;margin-bottom:4px;color:#ff3860">⚠ Transfer Ownership</h3>
     <p style="font-size:12px;color:var(--fg3);margin-bottom:12px">Hands full Owner control to another account. You will be demoted to Admin. This cannot be undone by yourself — the new Owner must transfer it back.</p>
-    <div class="pf"><label>New Owner</label><select id="toTarget">${gU().filter(u=>u.role!=='Owner').map(u=>`<option value="${esc(u.email)}">${esc(u.username)} (${esc(u.role)})</option>`).join('')||'<option disabled>No eligible accounts</option>'}</select></div>
+    <div class="pf"><label>New Owner</label><select id="toTarget">${gU().filter(u=>u.role!=='Owner').map(u=>`<option value="${esc(u.uid)}">${esc(u.username)} (${esc(u.role)})</option>`).join('')||'<option disabled>No eligible accounts</option>'}</select></div>
     <button class="btn-g" style="background:#ff3860" onclick="confirmTransferOwnership()">Transfer Ownership</button>`;
 }
 
@@ -1264,22 +1289,21 @@ function saveSets(){
   lss('hs',s);apS();logA('Settings updated by '+c.email);toast('Settings saved!','success');
 }
 
-function saveCredentials(){
+async function saveCredentials(){
   const c=gC();if(!c||c.role!=='Owner')return toast('Owner only','error');
   const curP=document.getElementById('sCurP').value;
   const newE=(document.getElementById('sNE').value||'').trim().toLowerCase();
   const newP=document.getElementById('sNP').value;
   const newP2=document.getElementById('sNP2').value;
   if(!curP)return toast('Enter current password','error');
-  let us=gU();
-  const idx=us.findIndex(x=>x.email===c.email&&x.password===btoa(curP));
-  if(idx===-1)return toast('Current password incorrect','error');
   if(newP&&newP!==newP2)return toast('New passwords do not match','error');
-  if(newP&&newP.length<4)return toast('Password min 4 chars','error');
-  if(newE&&newE!==c.email&&us.find(x=>x.email===newE))return toast('Email already in use','error');
-  if(newE)us[idx].email=newE;
-  if(newP)us[idx].password=btoa(newP);
-  sU(us);sC(us[idx]);
+  if(newP&&newP.length<6)return toast('Password min 6 chars — Firebase requirement','error');
+  try{
+    await window.fbUpdateCredentials(curP,newE||null,newP||null);
+  }catch(err){
+    return toast(friendlyAuthError(err),'error');
+  }
+  if(newE)c.email=newE;
   logA('Owner credentials updated by '+c.email);
   toast('Credentials updated successfully','success');
   document.getElementById('sCurP').value='';
@@ -1438,29 +1462,30 @@ function cfmRm(un){
 function confirmTransferOwnership(){
   const sel=document.getElementById('toTarget');
   if(!sel||!sel.value)return toast('No account selected','error');
-  const email=sel.value;
-  const us=gU();
-  const target=us.find(x=>x.email===email);
+  const uid=sel.value;
+  const target=gU().find(x=>x.uid===uid);
   if(!target)return toast('Account not found','error');
   document.getElementById('cfmH').innerHTML=S.warn+' Confirm Ownership Transfer';
   document.getElementById('cfmMsg').textContent=`Transfer Owner to "${target.username}"? You will be demoted to Admin immediately. This cannot be undone by yourself.`;
   const y=document.getElementById('cfmY');
   y.textContent='Yes, Transfer';
-  y.onclick=()=>doTransferOwnership(email);
+  y.onclick=()=>doTransferOwnership(uid);
   openM('cfmM');
 }
-function doTransferOwnership(email){
+async function doTransferOwnership(uid){
   const c=gC();if(!c||c.role!=='Owner')return;
-  let us=gU();
-  const meIdx=us.findIndex(x=>x.email===c.email);
-  const targetIdx=us.findIndex(x=>x.email===email);
-  if(meIdx<0||targetIdx<0)return toast('Account not found','error');
-  us[meIdx].role='Admin';
-  us[targetIdx].role='Owner';
-  sU(us);
-  logA(`${c.username||c.email} transferred Owner to ${us[targetIdx].username||email}`);
+  const target=gU().find(x=>x.uid===uid);
+  if(!target)return toast('Account not found','error');
+  try{
+    await window.setRoleDoc(c.uid,{role:'Admin'});
+    await window.setRoleDoc(uid,{role:'Owner'});
+  }catch(err){
+    return toast('Transfer failed: '+err.message,'error');
+  }
+  logA(`${c.username||c.email} transferred Owner to ${target.username}`);
+  c.role='Admin';
   closeMs();
-  upAuth(); // gC() self-heals to the new "Admin" role on next read
+  upAuth();
   showPage('home');
   toast('Ownership transferred. You are now Admin.','success');
 }
@@ -1635,7 +1660,7 @@ function buildAdminSec(){
 
   // Sort: Owner → Admin → Member, then alphabetically
   const roleOrder={Owner:0,Admin:1,Member:2};
-  const sorted=[...us].sort((a,b)=>(roleOrder[a.role]??2)-(roleOrder[b.role]??2)||a.email.localeCompare(b.email));
+  const sorted=[...us].sort((a,b)=>(roleOrder[a.role]??2)-(roleOrder[b.role]??2)||(a.username||'').localeCompare(b.username||''));
 
   el.innerHTML=`
     <h2 style="font-weight:700;font-size:18px;margin-bottom:6px;display:flex;align-items:center;gap:8px">${S.shield} Manage Users</h2>
@@ -1645,13 +1670,14 @@ function buildAdminSec(){
 }
 
 function userCard(u,cur){
-  const isYou=cur&&cur.email===u.email;
+  const isYou=cur&&cur.uid===u.uid;
   const isOwner=u.role==='Owner';
   const isAdmin=u.role==='Admin';
-  const initial=(u.username||u.email||'?')[0].toUpperCase();
+  const displayEmail=u.email||'';
+  const initial=(u.username||displayEmail||'?')[0].toUpperCase();
 
-  // Unique avatar colour derived from email
-  const hue=([...u.email].reduce((a,ch)=>a+ch.charCodeAt(0),0))%360;
+  // Unique avatar colour derived from uid
+  const hue=([...u.uid].reduce((a,ch)=>a+ch.charCodeAt(0),0))%360;
   const avBg=`hsl(${hue},50%,30%)`;
   const avFg=`hsl(${hue},80%,75%)`;
 
@@ -1665,19 +1691,19 @@ function userCard(u,cur){
   let btns='';
   if(cur&&cur.role==='Owner'&&!isOwner&&!isYou){
     btns=isAdmin
-      ?`<button class="btn-demote" onclick="setRole('${esc(u.email)}','Member')">Revoke Admin</button>`
-      :`<button class="btn-promote" onclick="setRole('${esc(u.email)}','Admin')">Make Admin</button>`;
-    btns+=`<button class="btn-demote" style="background:rgba(255,56,96,.15);color:#ff3860;border-color:rgba(255,56,96,.3)" onclick="cfmDelUser('${esc(u.email)}')">Delete User</button>`;
+      ?`<button class="btn-demote" onclick="setRole('${esc(u.uid)}','Member')">Revoke Admin</button>`
+      :`<button class="btn-promote" onclick="setRole('${esc(u.uid)}','Admin')">Make Admin</button>`;
+    btns+=`<button class="btn-demote" style="background:rgba(255,56,96,.15);color:#ff3860;border-color:rgba(255,56,96,.3)" onclick="cfmDelUser('${esc(u.uid)}')">Delete User</button>`;
   }
 
-  return `<div class="usr-card ${isOwner?'is-owner':isAdmin?'is-admin':''}" data-email="${esc(u.email)}" data-name="${esc((u.username||u.email).toLowerCase())}">
+  return `<div class="usr-card ${isOwner?'is-owner':isAdmin?'is-admin':''}" data-email="${esc(displayEmail.toLowerCase())}" data-name="${esc((u.username||displayEmail).toLowerCase())}">
     <div class="usr-av" style="background:${avBg};color:${avFg}">${initial}</div>
     <div class="usr-meta">
       <div class="usr-name">
-        ${esc(u.username||u.email.split('@')[0])}
+        ${esc(u.username||displayEmail.split('@')[0]||'Unknown')}
         ${isYou?`<span class="usr-you">You</span>`:''}
       </div>
-      <div class="usr-email">${esc(u.email)}</div>
+      <div class="usr-email">${esc(displayEmail)}</div>
       <div style="margin-top:5px">${roleBadge}</div>
     </div>
     ${btns?`<div class="usr-acts">${btns}</div>`:''}
@@ -1692,42 +1718,49 @@ function filterAdmUsers(q){
   });
 }
 
-function cfmDelUser(email){
+function cfmDelUser(uid){
   const c=gC();if(!c||c.role!=='Owner')return toast('Owner only','error');
-  const us=gU();
-  const u=us.find(x=>x.email===email);
+  const u=gU().find(x=>x.uid===uid);
   if(!u)return toast('User not found','error');
   if(u.role==='Owner')return toast('Cannot delete the Owner account','error');
-  if(u.email===c.email)return toast('Cannot delete your own account here — use Danger Zone in the account menu','error');
+  if(u.uid===c.uid)return toast('Cannot delete your own account here — use Danger Zone in the account menu','error');
   document.getElementById('cfmH').innerHTML=S.warn+' Confirm User Deletion';
-  document.getElementById('cfmMsg').textContent=`Permanently delete "${u.username||u.email}"? This cannot be undone.`;
+  document.getElementById('cfmMsg').textContent=`Permanently delete "${u.username||u.email}"? This removes their role/access immediately. Note: their login itself can only be fully deleted via Firebase Console (client apps can't delete other users' auth accounts).`;
   const y=document.getElementById('cfmY');
   y.textContent='Yes, Delete';
-  y.onclick=()=>doDelUser(email);
+  y.onclick=()=>doDelUser(uid);
   openM('cfmM');
 }
-function doDelUser(email){
+async function doDelUser(uid){
   const c=gC();if(!c||c.role!=='Owner')return;
-  let us=gU();
-  const u=us.find(x=>x.email===email);
+  const u=gU().find(x=>x.uid===uid);
   if(!u)return toast('User not found','error');
   if(u.role==='Owner')return toast('Cannot delete the Owner account','error');
-  us=us.filter(x=>x.email!==email);
-  sU(us);
-  logA(`${u.username||u.email} deleted by ${c.email}`);
+  try{
+    await window.deleteRoleDoc(uid);
+  }catch(err){
+    return toast('Delete failed: '+err.message,'error');
+  }
+  logA(`${u.username||u.email} deleted by ${c.username||c.email}`);
   closeMs();
-  toast('User deleted','success');
+  toast('User access removed','success');
+  await refreshRolesCache();
   buildAdminSec();
 }
-function setRole(email,newRole){
-  const c=gC();
-  if(u.email===c.email)return toast('Cannot change your own role','error');
-
+async function setRole(uid,newRole){
+  const c=gC();if(!c||c.role!=='Owner')return toast('Owner only','error');
+  if(uid===c.uid)return toast('Cannot change your own role','error');
+  const u=gU().find(x=>x.uid===uid);
+  if(!u)return toast('User not found','error');
+  try{
+    await window.setRoleDoc(uid,{role:newRole});
+  }catch(err){
+    return toast('Failed: '+err.message,'error');
+  }
   const label=newRole==='Admin'?'Granted Admin to':'Revoked Admin from';
-  u.role=newRole;
-  sU(us);
-  logA(`${label} ${email} by ${c.email}`);
-  toast(`${u.username||email} is now ${newRole}`,'success');
+  u.role=newRole; // update the local cache immediately so the UI reflects it without a refetch
+  logA(`${label} ${u.username||u.email} by ${c.username||c.email}`);
+  toast(`${u.username||'User'} is now ${newRole}`,'success');
   buildAdminSec(); // re-render with updated roles
 }
 
