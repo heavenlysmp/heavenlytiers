@@ -292,6 +292,7 @@ let curPg='home';
 const NAV_ITEMS=[
   {id:'home',label:'Home',svg:S.home},
   {id:'rankings',label:'Rankings',svg:S.trophy},
+  {id:'testers',label:'Testers',svg:'<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.17a2 2 0 01-.59 1.42L4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4l-5.41-5.41A2 2 0 0114 8.17V3"/></svg>'},
   {id:'api',label:'API',svg:S.code},
   {id:'panel',label:'Panel',svg:S.crown,auth:true}
 ];
@@ -304,6 +305,7 @@ function showPage(n){
   closeHam();
   if(n==='home')animStats();
   if(n==='rankings')renderRank();
+  if(n==='testers')renderTesters();
   if(n==='panel')initPanel();
   window.scrollTo({top:0});
 }
@@ -946,7 +948,7 @@ function renderRank(){
     html+=`<tr class="rw ${rc}" onclick="showPD('${p.username.replace(/'/g,"\\'")}')" style="animation:rowIn .2s ease ${delay}ms both">
       <td style="${rkSt}">${rank}</td>
       <td class="sk-c">${tableSkinCell(p,i)}</td>
-      <td class="un-c"><div class="un">${highlightMatch(p.username,q)}</div><div class="ut">${titlePill(title.name)} <span style="color:var(--fg3)">(${pts} pts)</span>${warnHtml}</div></td>
+      <td class="un-c"><div class="un">${highlightMatch(p.username,q)}</div><div class="ut">${titlePill(title.name)}${isTester(p.username)?`<span class="tc-badge-tester"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 3h6M10 3v5.17a2 2 0 01-.59 1.42L4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4l-5.41-5.41A2 2 0 0114 8.17V3"/></svg> Tester</span>`:''} <span style="color:var(--fg3)">(${pts} pts)</span>${warnHtml}</div></td>
       <td>${p.region}</td>
       <td><div class="tiers-r">${tierBadges(p)}</div></td>
     </tr>`;
@@ -1067,7 +1069,7 @@ function showPD(un){
   <div class="pd-hero">
     <div class="pd-av-circle">${S.crown}${avatarHtml}</div>
     <h2>${esc(p.username)}<span class="cpn" onclick="event.stopPropagation();navigator.clipboard.writeText('${esc(p.username)}');toast('Username copied!','success')">${S.copy}</span></h2>
-    <div class="tit-ln">${titlePill(title.name)}</div>
+    <div class="tit-ln">${titlePill(title.name)}${isTester(p.username)?`<span class="tc-badge-tester"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 3h6M10 3v5.17a2 2 0 01-.59 1.42L4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4l-5.41-5.41A2 2 0 0114 8.17V3"/></svg> Tester</span>`:''}</div>
     <div class="rg">${REGION_FLAG[p.region]||''} ${p.region}</div>
     ${nameMcLink}
     <div class="pd-socials">${socialLinks}${copyLinkBtn}</div>
@@ -1861,6 +1863,7 @@ function buildUI(){
 
   // Page headers with SVG
   document.getElementById('rkH').innerHTML=S.trophy+' Rankings';
+  document.getElementById('tsH').innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.17a2 2 0 01-.59 1.42L4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4l-5.41-5.41A2 2 0 0114 8.17V3"/></svg> Testers';
   document.getElementById('apiH').innerHTML=S.code+' API Documentation';
   document.getElementById('panH').innerHTML=S.crown+' Owner / Admin Panel';
 
