@@ -496,31 +496,59 @@ function friendlyAuthError(err){
 // has a valid credential). Registered from the cloud-ready handler below, never
 // at top-level — firebase.js is a deferred module script, so window.fbOnAuthChange
 // may not exist yet if called synchronously while app.js (a classic script) parses.
+// Restores the Firebase session and loads the role safely.
+// If the role document can't be loaded, we sign out instead of silently becoming "Member".
 function registerAuthListener(){
   if(typeof window.fbOnAuthChange!=='function'){
     console.error('window.fbOnAuthChange missing — firebase.js failed to load, auth will not work.');
     return;
   }
+
   window.fbOnAuthChange(async(fbUser)=>{
     if(!fbUser){
       _session=null;
       _pendingOwnerLogin=null;
+      _ownerPinVerifiedThisSession=false;
       upAuth();
       return;
     }
+
     let role;
-    try{ role=await window.getRoleDoc(fbUser.uid); }
-    catch(e){ console.error('Failed to load role on session restore',e); role=null; }
-    const u={uid:fbUser.uid,email:fbUser.email,username:role?role.username:fbUser.email.split('@')[0],role:role?role.role:'Member',pin:role?role.pin:undefined};
-    if(u.role==='Owner'&&u.pin&&!_ownerPinVerifiedThisSession){
-      // Restoring an Owner session still requires the PIN once per tab — same bar as a fresh login.
+    try{
+      role = await window.getRoleDoc(fbUser.uid);
+    }catch(e){
+      console.error('Failed to load role on session restore',e);
+      role = null;
+    }
+
+    // DO NOT silently fall back to "Member"
+    if(!role){
+      await window.fbSignOut();
+      _session=null;
+      upAuth();
+      toast('Unable to load your account permissions. Please log in again.','error');
+      return;
+    }
+
+    const u={
+      uid:fbUser.uid,
+      email:fbUser.email,
+      username:role.username || fbUser.email.split('@')[0],
+      role:role.role,
+      pin:role.pin
+    };
+
+    // Owner PIN check once per browser tab
+    if(u.role==='Owner' && u.pin && !_ownerPinVerifiedThisSession){
       _pendingOwnerLogin=u;
       openOwnerPinStep();
       return;
     }
+
     _session=u;
     upAuth();
-    if(curPg==='panel')initPanel();
+
+    if(curPg==='panel') initPanel();
   });
 }
 
