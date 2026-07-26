@@ -122,6 +122,25 @@ window.getAllRoles = async function(){
   return out;
 };
 
+// Determines whether THIS signup should become Owner, without needing to list the
+// "roles" collection (which a brand-new user can't do yet — chicken-and-egg on
+// permissions, since Firestore rules gate that list to Owner-only). Uses a single
+// small public doc at meta/ownerClaim instead: whoever successfully creates it
+// first becomes Owner. Firestore only allows one "create" to win if two people
+// race — the loser's write is naturally rejected since the doc then exists.
+window.claimOwnerIfFirst = async function(uid){
+  const ref = doc(db, "meta", "ownerClaim");
+  try{
+    const snap = await getDoc(ref);
+    if(snap.exists()) return false; // someone already claimed it
+    await setDoc(ref, { uid, claimedAt: new Date().toISOString() });
+    return true;
+  }catch(err){
+    console.error("Owner claim check failed", err);
+    return false; // fail closed — never default a permission error to "yes, be Owner"
+  }
+};
+
 // Changing your own email/password requires re-entering your current password first
 // (Firebase's security model — "reauthentication").
 window.fbUpdateCredentials = async function(currentPassword, newEmail, newPassword){
@@ -131,4 +150,12 @@ window.fbUpdateCredentials = async function(currentPassword, newEmail, newPasswo
   await reauthenticateWithCredential(user, cred);
   if(newEmail && newEmail !== user.email) await updateEmail(user, newEmail);
   if(newPassword) await updatePassword(user, newPassword);
+};
+
+// Stores an uploaded mode icon (as base64) in Firestore, served back out at
+// /tier_icons/{slug} via the /api/icon/[mode] serverless function. Firestore docs
+// cap at ~1MB, base64 inflates size ~33%, so keep uploaded images small (a few
+// hundred KB max) — this is meant for small icon images, not photos.
+window.uploadModeIcon = async function(slug, base64, contentType){
+  await setDoc(doc(db, "mode_icons", slug), { base64, contentType, updatedAt: new Date().toISOString() });
 };
