@@ -245,7 +245,8 @@ tr.r3{border-left:3px solid #CD7F32}
 .tc-lt4{border-color:#707070!important;background:rgba(112,112,112,.06)}
 .tc-lt5{border-color:#505050!important;background:rgba(80,80,80,.06)}
 .tc-no{border-style:dashed!important;border-color:var(--bd)!important;background:transparent;opacity:.3}
-[class*="tc-r"]{opacity:.5;filter:grayscale(.35)}
+[class*="tc-r"]{border-color:#c0392b!important;background:rgba(192,57,43,.08)!important;box-shadow:none!important;opacity:.85}
+html.light [class*="tc-r"]{border-color:#a83226!important;background:rgba(168,50,38,.1)!important;opacity:1}
 .tbdg{display:inline-block;padding:2px 8px;border-radius:5px;font-weight:700;font-size:11px;letter-spacing:.5px;text-transform:uppercase}
 .tbdg.ht1{background:#FFD700;color:#000;box-shadow:0 0 8px rgba(255,215,0,.4)}
 .tbdg.ht2{background:#FFA500;color:#000}.tbdg.ht3{background:#FF8C00;color:#000}
@@ -253,7 +254,8 @@ tr.r3{border-left:3px solid #CD7F32}
 .tbdg.lt1{background:#C0C0C0;color:#000}.tbdg.lt2{background:#A8A8A8;color:#000}
 .tbdg.lt3{background:#909090;color:#fff}.tbdg.lt4{background:#707070;color:#fff}
 .tbdg.lt5{background:#505050;color:#fff}
-.tbdg[class*=" r"]{background:var(--bd2);color:var(--fg2);opacity:.75;box-shadow:none;border:1px dashed var(--fg3)}
+.tbdg[class*=" r"]{background:rgba(192,57,43,.1);color:#c0392b;opacity:.9;box-shadow:none;border:1px dashed #c0392b}
+html.light .tbdg[class*=" r"]{color:#a83226;border-color:#a83226;background:rgba(168,50,38,.12)}
 .em{text-align:center;padding:60px 20px;color:var(--fg3)}
 .em svg{width:48px;height:48px;margin:0 auto 12px;display:block;opacity:.3}
 .em p{font-size:14px}
@@ -397,7 +399,8 @@ html.light .auth-tabs{background:#eee}
 .tc-region-af{background:rgba(248,113,113,.18);color:#f87171}
 .tc-prow-retired{opacity:.55}
 .tc-prow-retired:hover{opacity:.85}
-.tc-retired-tag{margin-left:auto;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--fg3);border:1px dashed var(--fg3);padding:1px 6px;border-radius:10px;flex-shrink:0}
+.tc-retired-tag{margin-left:auto;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#c0392b;border:1px dashed #c0392b;background:rgba(192,57,43,.08);padding:1px 6px;border-radius:10px;flex-shrink:0}
+html.light .tc-retired-tag{color:#a83226;border-color:#a83226;background:rgba(168,50,38,.1)}
 .tc-prow:hover{background:var(--gld-u)}
 .tc-prow-more{display:none}
 .tc-prow-av{width:32px;height:32px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--el);display:flex;align-items:center;justify-content:center}
