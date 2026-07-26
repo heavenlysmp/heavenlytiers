@@ -418,8 +418,8 @@ async function doSign(){
   }catch(err){
     return toast(friendlyAuthError(err),'error');
   }
-  const existing=await refreshRolesCache();
-  const role=existing.length<=1?'Owner':'Member'; // we're already in the list after signup, so <=1 means "just us"
+  const isFirst=await window.claimOwnerIfFirst(fbUser.uid);
+  const role=isFirst?'Owner':'Member';
   const roleData={username:n,role,email:fbUser.email};
   try{ await window.setRoleDoc(fbUser.uid,roleData); }catch(err){ return toast('Account created but role setup failed: '+err.message,'error'); }
   await refreshRolesCache();
@@ -512,12 +512,9 @@ function registerAuthListener(){
     try{ role=await window.getRoleDoc(fbUser.uid); }
     catch(e){ console.error('Failed to load role on session restore',e); role=null; }
     const u={uid:fbUser.uid,email:fbUser.email,username:role?role.username:fbUser.email.split('@')[0],role:role?role.role:'Member',pin:role?role.pin:undefined};
-    if(u.role==='Owner'&&u.pin&&!_ownerPinVerifiedThisSession){
-      // Restoring an Owner session still requires the PIN once per tab — same bar as a fresh login.
-      _pendingOwnerLogin=u;
-      openOwnerPinStep();
-      return;
-    }
+    // No PIN re-check here — Firebase's own persisted session already IS the credential
+    // being trusted across refreshes. PIN is only enforced at the moment of an actual
+    // fresh sign-in (doLogin), not every time the tab reloads.
     _session=u;
     upAuth();
     if(curPg==='panel')initPanel();
@@ -1575,20 +1572,56 @@ function renderModeMgmt(){
     ${cards}
     <div class="mm-add">
       <div class="pf"><label>Mode Name</label><input type="text" id="newModeName" placeholder="e.g. Trident"/></div>
-      <div class="pf"><label>Icon URL (optional)</label><input type="text" id="newModeIcon" placeholder="https://example.com/icon.png"/></div>
+      <div class="pf"><label>Icon Image (optional)</label><input type="file" id="newModeIcon" accept="image/*"/></div>
       <button onclick="addMode()" title="Add mode">${S.plus}</button>
     </div>`;
 }
 
-function addMode(){
+// URL-safe key for a mode name — used for the /tier_icons/{slug} serving route.
+function modeSlug(name){return String(name).toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')}
+
+// Reads a File as base64 (no data: prefix) — used for icon uploads.
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(r.result.split(',')[1]);
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+
+// Uploads an icon file for a mode, stores it in Firestore, and points MODE_IC at
+// the clean serving URL. Shared by both Add Mode and the per-mode edit-icon button.
+async function uploadAndSetModeIcon(modeName,file){
+  if(!file)return false;
+  if(file.size>800*1024){toast('Image too large — keep it under 800KB','error');return false;}
+  if(!file.type.startsWith('image/')){toast('Please choose an image file','error');return false;}
+  const slug=modeSlug(modeName);
+  try{
+    const base64=await fileToBase64(file);
+    await window.uploadModeIcon(slug,base64,file.type);
+  }catch(err){
+    toast('Icon upload failed: '+(err.message||err),'error');
+    return false;
+  }
+  MODE_IC[modeName]={u:'/tier_icons/'+slug};
+  return true;
+}
+
+async function addMode(){
   const c=gC();if(!c||c.role!=='Owner')return toast('Owner only','error');
   const name=document.getElementById('newModeName').value.trim();
-  const icon=document.getElementById('newModeIcon').value.trim();
+  const fileInput=document.getElementById('newModeIcon');
+  const file=fileInput&&fileInput.files&&fileInput.files[0];
   if(!name)return toast('Mode name is required','error');
   if(MODES.some(m=>m.toLowerCase()===name.toLowerCase()))return toast('Mode already exists','error');
   if(name.toLowerCase()==='overall')return toast('Cannot use "Overall" as a mode name','error');
   MODES.push(name);
-  MODE_IC[name]={u:icon||''};
+  MODE_IC[name]={u:''};
+  if(file){
+    const ok=await uploadAndSetModeIcon(name,file);
+    if(!ok){MODES.pop();delete MODE_IC[name];return;} // don't leave a half-added mode if upload failed
+  }
   saveModes();
   logA(`Added game mode "${name}" by ${c.email}`);
   toast(`Added mode: ${name}`,'success');
@@ -1626,16 +1659,23 @@ function renameMode(oldName){
 }
 
 function editModeIcon(modeName){
-  const cur=MODE_IC[modeName]?MODE_IC[modeName].u:'';
-  const newUrl=prompt('Icon URL for "'+modeName+'":\n(Leave empty to remove icon)',cur);
-  if(newUrl===null)return;
   const c=gC();if(!c||c.role!=='Owner')return toast('Owner only','error');
-  MODE_IC[modeName]={u:newUrl.trim()};
-  saveModes();
-  logA(`Changed icon for "${modeName}" by ${c.email}`,{type:'changeIcon',mode:modeName,url:cur});
-  toast(`Icon updated for ${modeName}`,'success');
-  renderModeMgmt();
-  if(curPg==='rankings')renderRank();
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='image/*';
+  input.onchange=async()=>{
+    const file=input.files&&input.files[0];
+    if(!file)return;
+    const oldUrl=MODE_IC[modeName]?MODE_IC[modeName].u:'';
+    const ok=await uploadAndSetModeIcon(modeName,file);
+    if(!ok)return;
+    saveModes();
+    logA(`Changed icon for "${modeName}" by ${c.email}`,{type:'changeIcon',mode:modeName,url:oldUrl});
+    toast(`Icon updated for ${modeName}`,'success');
+    renderModeMgmt();
+    if(curPg==='rankings')renderRank();
+  };
+  input.click();
 }
 
 function removeMode(modeName){
